@@ -1,0 +1,61 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "jun-desk-2-test",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // The dashboard and widget frame (React, built by Vite) are static assets.
+  // API routes go to the Worker first; everything else falls back to the SPA.
+  // /auth/callback is the dev-only "Sign in with ChatGPT" loopback return. /widget (the chat
+  // frame) goes through the Worker so it can say which sites may embed it (frame-ancestors).
+  "assets": {
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/auth/callback", "/widget"]
+  },
+
+  // Resource IDs are omitted on purpose: the Deploy to Cloudflare button and
+  // `wrangler deploy` provision them automatically.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "jun-desk-2",
+      "migrations_dir": "migrations","database_id": "b0723c48-20a1-487e-a0b2-507e9ee073f8"
+    }
+  ],
+
+  // Attachments (W-06).
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "jun-desk-2","preview_bucket_name": "jun-desk-2" }],
+
+  // Workers AI: embeddings, reranking, and the zero-key default chat model.
+  "ai": { "binding": "AI" },
+
+  // Website crawling (K-01): one message per page.
+  "queues": {
+    "producers": [{ "binding": "CRAWL_QUEUE", "queue": "jun-desk-2" }],
+    "consumers": [{ "queue": "jun-desk-2", "max_batch_size": 4, "max_batch_timeout": 2 }]
+  },
+
+  // One schedule (the Workers Free plan allows 5 per account): every 15 minutes, topic labels
+  // for quiet chats (A-02); the 03:15 UTC run also does the daily knowledge re-sync.
+  "triggers": { "crons": ["*/15 * * * *"] },
+
+  // Conversation: one per conversation, live state + AI turns, write-through to D1 (D-11).
+  // WorkspaceHub: one per workspace, inbox fan-out, presence, dev ChatGPT token refresh.
+  // KnowledgeIndex: one per workspace, vector search over knowledge chunks.
+  "durable_objects": {
+    "bindings": [
+      { "name": "CONVERSATION", "class_name": "Conversation" },
+      { "name": "WORKSPACE_HUB", "class_name": "WorkspaceHub" },
+      { "name": "KNOWLEDGE_INDEX", "class_name": "KnowledgeIndex" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Conversation"] },
+    { "tag": "v2", "new_sqlite_classes": ["WorkspaceHub"] },
+    { "tag": "v3", "new_sqlite_classes": ["KnowledgeIndex"] }
+  ],
+
+  "observability": { "enabled": true }
+}
