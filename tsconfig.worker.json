@@ -1,0 +1,18 @@
+{
+  // The Worker (worker/). Bundled by Vite/Wrangler; types come from `npm run cf-typegen`.
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": [],
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true
+  },
+  "include": ["worker/**/*.ts", "shared/**/*.ts", "worker-configuration.d.ts"],
+  "exclude": ["**/*.test.ts"]
+}

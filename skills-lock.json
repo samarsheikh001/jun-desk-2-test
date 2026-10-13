@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "copy-component": {
+      "source": "samarsheikh001/my-skills",
+      "sourceType": "github",
+      "skillPath": "skills/copy-component/SKILL.md",
+      "computedHash": "0fb29a6d547f4f4e53d4898d1331177927d8a621da6a9e9171c20ea492d80189"
+    },
+    "style-reference": {
+      "source": "samarsheikh001/my-skills",
+      "sourceType": "github",
+      "skillPath": "skills/style-reference/SKILL.md",
+      "computedHash": "b096919b6c3bb115d598a82c49afe28daa1790d705dd1e9472ad38aa2fc9f72d"
+    }
+  }
+}

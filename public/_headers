@@ -1,0 +1,5 @@
+# Workers static assets config (not served).
+# /geo/world.v1.json: the Visitors globe's map, built from Natural Earth (public domain) by
+# scripts/globe-data.ts. It never changes under the same name: bump the version when it does.
+/geo/*
+  Cache-Control: public, max-age=31536000, immutable

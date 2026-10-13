@@ -1,0 +1,14 @@
+{
+  "name": "@jun/widget-react",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "React hook for Jun Desk page actions (AI-21): registers a WebMCP-shaped action while a component is on screen.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

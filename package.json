@@ -1,0 +1,71 @@
+{
+  "name": "jun-desk",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "npm run db:migrate:local && vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "node scripts/deploy.ts",
+    "db:migrate": "wrangler d1 migrations apply DB --remote",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "cf-typegen": "wrangler types worker-configuration.d.ts",
+    "jun": "node packages/cli/src/index.ts",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json && tsc -p tsconfig.web.json",
+    "test": "node --test \"packages/*/src/**/*.test.ts\" \"worker/**/*.test.ts\" \"shared/**/*.test.ts\" \"web/lib/*.test.ts\"",
+    "test:e2e": "node scripts/e2e-auth.ts && node scripts/e2e-chat.ts && node scripts/e2e-ai.ts && node scripts/e2e-debug.ts && node scripts/e2e-agent.ts && node scripts/e2e-visitors.ts && node scripts/e2e-polish.ts && node scripts/e2e-inbox.ts && node scripts/e2e-metrics.ts && node scripts/e2e-issues.ts && node scripts/e2e-knowledge.ts && node scripts/e2e-assignment.ts && node scripts/e2e-topics.ts && node scripts/e2e-notifications.ts && node scripts/e2e-openers.ts && node scripts/e2e-actions.ts && node scripts/e2e-widgets.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.62.5",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/d3-scale": "^4.0.9",
+    "@types/d3-shape": "^3.2.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "shadcn": "^4.21.2",
+    "tailwindcss": "^4.3.3",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "wrangler": "^4.147.0"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^4.0.83",
+    "@base-ui/react": "^1.8.0",
+    "@hugeicons/core-free-icons": "^4.3.5",
+    "@hugeicons/react": "^1.1.10",
+    "@shadcn/react": "^0.3.1",
+    "@simplewebauthn/browser": "^14.0.0",
+    "@simplewebauthn/server": "^14.0.3",
+    "ai": "^7.0.127",
+    "class-variance-authority": "^0.7.1",
+    "cn": "^0.4.0",
+    "d3-scale": "^4.0.2",
+    "d3-shape": "^3.2.0",
+    "hono": "^4.13.13",
+    "lucide": "^1.55.0",
+    "maplibre-gl": "^6.12.0",
+    "motion": "^14.0.0",
+    "preact": "^10.29.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "workers-ai-provider": "^4.0.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "cloudflare": {
+    "bindings": {
+      "SETUP_TOKEN": {
+        "description": "Any long passphrase (**16+ characters**). You'll enter it once on first visit to create the owner account, and again only to recover access."
+      }
+    }
+  }
+}

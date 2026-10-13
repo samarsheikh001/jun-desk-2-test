@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acme Analytics (Jun Desk demo)</title>
+    <style>
+      body { margin: 0; font: 16px/1.6 system-ui, sans-serif; color: #1c1c1a; background: #fafaf8; }
+      header { padding: 16px 24px; background: #fff; border-bottom: 1px solid #e4e4df; font-weight: 700; }
+      main { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+      .card { background: #fff; border: 1px solid #e4e4df; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+      button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #c9c9c3; background: #fff; cursor: pointer; }
+      .note { color: #6b6b66; font-size: 14px; }
+      code { background: #f0f0ec; padding: 1px 6px; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <header>Acme Analytics</header>
+    <main>
+      <div class="card">
+        <h1>Demo customer site</h1>
+        <p>This page pretends to be one of your customer-facing pages. The chat button in the bottom-right corner is the Jun Desk widget.</p>
+        <p class="note">Open your desk's inbox in another window, then send a message from here to see it arrive live. Replies, typing indicators and read receipts flow both ways.</p>
+      </div>
+      <div class="card">
+        <h2>Billing</h2>
+        <p>Your plan: <strong>Team</strong> · next invoice on the 1st.</p>
+        <p>
+          <button id="pay">Pay invoice</button>
+          <button id="chart">Show usage chart</button>
+          <button id="export">Export CSV</button>
+          <button id="cancel">Cancel subscription</button>
+          <span id="status" class="note"></span>
+        </p>
+        <p class="note">Try it: click a button (one request fails, one throws a JavaScript error, and Export does nothing however often you click it), then ask in the chat "why can't I pay my invoice?". The widget shares what went wrong, masked, so the AI and your team can see it.</p>
+        <p class="note">Cancel subscription opens the chat with the <code>cancel</code> intent (AI-20; needs a <code>skills/…/SKILL.md</code> with <code>intent: cancel</code>, like the <code>jun init</code> starter). "Cancel anyway" closes it and runs this page's own cancel step.</p>
+      </div>
+      <div class="card" id="plans">
+        <h2>Page actions</h2>
+        <p>This page registers what can be done here, as WebMCP tools (AI-21): <code>upgrade_plan</code> (asks which plan, then confirms), <code>export_csv</code> (runs at once), and a plain <code>document.modelContext.registerTool</code> call for <code>show_usage</code>. Try "upgrade me to the growth plan", "export my usage", or "show my usage".</p>
+        <p class="note" id="plan-note">Current plan: <strong id="plan-name">Team</strong></p>
+      </div>
+      <p class="note" id="missing" hidden>Add <code>?key=wk_…</code> to the URL. Widget → Install in the desk has a link with your key.</p>
+    </main>
+    <script>
+      // P1 demo: a payment request that fails with a 500, and a chart that throws.
+      document.getElementById("pay").onclick = function () {
+        document.getElementById("status").textContent = "Paying…";
+        fetch("/api/demo/billing", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ invoice: "inv_2041", email: "pat@customer.test" }) })
+          .then(function (r) { document.getElementById("status").textContent = r.ok ? "Paid" : "Something went wrong. Please try again."; });
+      };
+      document.getElementById("chart").onclick = function () {
+        var usage = undefined;
+        document.getElementById("status").textContent = "Chart failed to load.";
+        setTimeout(function () { usage.series.map(String); });
+      };
+      // AI-20: the app's own cancel button opens the chat with the cancel intent; onExit is the app's real cancellation.
+      document.getElementById("cancel").onclick = function () {
+        if (!window.JunDesk) return;
+        window.JunDesk.open({
+          intent: "cancel",
+          onExit: function () { document.getElementById("status").textContent = "Subscription cancelled (demo: your app's own cancel step runs here)."; },
+        });
+      };
+      // AI-21 page actions: a WebMCP tool plus Jun's extras (pages, element, context, undo), and a plain WebMCP registration.
+      var plan = "team";
+      function registerActions() {
+        var card = document.getElementById("plans");
+        window.JunDesk.registerAction({
+          name: "upgrade_plan",
+          description: "Change this account's plan",
+          inputSchema: { type: "object", properties: { plan: { type: "string", enum: ["starter", "team", "growth"], description: "The plan to move to" } }, required: ["plan"] },
+          annotations: { consequentialHint: true },
+          element: card,
+          context: function () { return { currentPlan: plan }; },
+          execute: function (input) {
+            var previous = plan;
+            plan = input.plan;
+            document.getElementById("plan-name").textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+            return new Promise(function (r) { setTimeout(function () { r({ summary: "Moved to the " + plan + " plan", previous: previous }); }, 600); });
+          },
+          undo: function (result) { plan = result.previous; document.getElementById("plan-name").textContent = plan.charAt(0).toUpperCase() + plan.slice(1); },
+        });
+        window.JunDesk.registerAction({
+          name: "export_csv",
+          description: "Download this month's usage as a CSV file",
+          risk: "auto",
+          execute: function () { document.getElementById("status").textContent = "usage-2026-10.csv downloaded (demo)"; return "usage-2026-10.csv (18 rows)"; },
+        });
+        document.modelContext.registerTool({
+          name: "show_usage",
+          description: "Scroll to the usage section and show this month's numbers",
+          inputSchema: { type: "object", properties: {} },
+          annotations: { readOnlyHint: true },
+          execute: function () { document.getElementById("chart").scrollIntoView({ block: "center" }); return "Usage: 4,210 events this month"; },
+        });
+      }
+      var key = new URLSearchParams(location.search).get("key");
+      if (key) {
+        var s = document.createElement("script");
+        s.src = "/widget.js";
+        s.async = true;
+        s.setAttribute("data-key", key);
+        // ?consent=required tries consent-aware mode (call JunDesk.consent(true) in the console).
+        if (new URLSearchParams(location.search).get("consent")) s.setAttribute("data-consent", "required");
+        // ?capture=off tries the site switch that turns off debug capture (and with it the nudges).
+        if (new URLSearchParams(location.search).get("capture") === "off") s.setAttribute("data-capture", "off");
+        s.onload = registerActions;
+        document.body.appendChild(s);
+      } else {
+        document.getElementById("missing").hidden = false;
+      }
+    </script>
+  </body>
+</html>

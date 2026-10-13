@@ -1,0 +1,396 @@
+/* W-09: ChatKit widgets in the chat (web/widget/chatkit/WidgetCard.tsx). Everything under .ck,
+   coloured by --ck-* tokens: the widget frame's palette by default, the dashboard's under .ck-desk.
+   A card with theme="dark" (or "light") redefines them for itself. */
+
+.ck,
+.ck-peek {
+  --ck-text: var(--text);
+  --ck-text-2: var(--text-soft);
+  --ck-text-3: var(--muted);
+  --ck-surface: var(--surface);
+  --ck-surface-2: var(--bg);
+  --ck-surface-3: var(--hover);
+  --ck-border: var(--border);
+  --ck-border-soft: var(--border-soft);
+  --ck-accent: var(--accent);
+  --ck-accent-text: var(--accent-text);
+  --ck-info: oklch(0.58 0.19 262);
+  --ck-discovery: oklch(0.56 0.21 293);
+  --ck-success: oklch(0.56 0.15 150);
+  --ck-caution: oklch(0.68 0.16 72);
+  --ck-warning: oklch(0.65 0.18 48);
+  --ck-danger: oklch(0.58 0.21 25);
+  /* How much of a tone a soft badge or button mixes in. */
+  --ck-tint: 14%;
+  --ck-on-solid: #fff;  /* text on a solid semantic button or badge */
+}
+.ck {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  color: var(--ck-text);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+}
+.ck.ck-desk {
+  --ck-text: var(--foreground);
+  --ck-text-2: color-mix(in srgb, var(--foreground) 78%, transparent);
+  --ck-text-3: var(--muted-foreground);
+  --ck-surface: var(--card);
+  --ck-surface-2: var(--muted);
+  --ck-surface-3: var(--accent);
+  --ck-border: var(--border);
+  --ck-border-soft: var(--border);
+  --ck-accent: var(--primary);
+  --ck-accent-text: var(--primary-foreground);
+}
+/* Dark: the whole card (`theme="dark"` on WidgetCard, e.g. on the island's near-black surface)
+   or one Card with theme="dark". Self-contained: nothing here reads the frame's own tokens, so it
+   looks right on a #0b0b0c host even when the frame itself is light. Primary is white on black. */
+.ck.ck-dark,
+.ck .ck-dark,
+.ck-peek.ck-dark {
+  --ck-text: #f5f5f7;
+  --ck-text-2: rgba(255, 255, 255, 0.72);
+  --ck-text-3: rgba(255, 255, 255, 0.5);
+  --ck-surface: #1a1a1c;
+  --ck-surface-2: rgba(255, 255, 255, 0.06);
+  --ck-surface-3: rgba(255, 255, 255, 0.1);
+  --ck-border: rgba(255, 255, 255, 0.14);
+  --ck-border-soft: rgba(255, 255, 255, 0.09);
+  --ck-accent: #fff;
+  --ck-accent-text: #0b0b0c;
+  --ck-info: oklch(0.74 0.14 255);
+  --ck-discovery: oklch(0.74 0.16 293);
+  --ck-success: oklch(0.78 0.16 150);
+  --ck-caution: oklch(0.84 0.15 85);
+  --ck-warning: oklch(0.78 0.15 55);
+  --ck-danger: oklch(0.72 0.18 22);
+  --ck-tint: 20%;
+  --ck-on-solid: #0b0b0c;
+  color: var(--ck-text);
+  color-scheme: dark;
+}
+.ck .ck-light {
+  --ck-text: #171717;
+  --ck-text-2: #404040;
+  --ck-text-3: #737373;
+  --ck-surface: #fff;
+  --ck-surface-2: #fafafa;
+  --ck-surface-3: #f5f5f5;
+  --ck-border: #e5e5e5;
+  --ck-border-soft: #ededed;
+  color: var(--ck-text);
+}
+/* A light card inside a dark one: its own accent and tones back (a light frame keeps its brand accent). */
+.ck.ck-dark .ck-light,
+.ck .ck-dark .ck-light {
+  --ck-accent: #171717;
+  --ck-accent-text: #fff;
+  --ck-info: oklch(0.58 0.19 262);
+  --ck-discovery: oklch(0.56 0.21 293);
+  --ck-success: oklch(0.56 0.15 150);
+  --ck-caution: oklch(0.68 0.16 72);
+  --ck-warning: oklch(0.65 0.18 48);
+  --ck-danger: oklch(0.58 0.21 25);
+  --ck-tint: 14%;
+  --ck-on-solid: #fff;
+  color-scheme: light;
+}
+
+/* Containers */
+.ck-card {
+  --ck-pad: 16px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: var(--ck-pad);
+  overflow: hidden;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.ck-card .ck-card { box-shadow: none; }
+.ck-card-list { padding: 4px; gap: 0; }
+.ck-box { display: flex; min-width: 0; gap: 8px; }
+.ck-row { flex-direction: row; align-items: center; }
+.ck-col { flex-direction: column; }
+.ck-basic { gap: 8px; }
+.ck-spacer { flex: 1 1 auto; }
+.ck-clickable { cursor: pointer; border-radius: 8px; }
+.ck-clickable:hover { background: var(--ck-surface-3); }
+.ck-img-btn { cursor: pointer; }
+.ck-img-btn:focus-visible { outline: 2px solid var(--ck-accent); outline-offset: 2px; }
+.ck-flush { margin-inline: calc(-1 * var(--ck-pad, 16px)); width: auto; max-width: none; }
+.ck-card > .ck-card-body:first-child > .ck-flush:first-child { margin-top: calc(-1 * var(--ck-pad, 16px)); }
+.ck-card > .ck-card-body:last-child > .ck-flush:last-child { margin-bottom: calc(-1 * var(--ck-pad, 16px)); }
+.ck-divider { align-self: stretch; margin: 2px 0; border: 0; border-top: 1px solid var(--ck-border-soft); }
+
+/* Text */
+.ck-text, .ck-title, .ck-caption, .ck-label { min-width: 0; margin: 0; overflow-wrap: anywhere; white-space: pre-line; }
+.ck-title { font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+.ck-caption { color: var(--ck-text-2); line-height: 1.4; }
+.ck-label { color: var(--ck-text-2); }
+.ck-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ck-md { min-width: 0; overflow-wrap: anywhere; }
+.ck-md p, .ck-md ul, .ck-md ol { margin: 0 0 6px; }
+.ck-md > :last-child { margin-bottom: 0; }
+.ck-md ul, .ck-md ol { padding-left: 18px; }
+.ck-md code { padding: 1px 4px; border-radius: 4px; background: var(--ck-surface-3); font-size: 0.92em; }
+.ck-md a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Content */
+.ck-icon { flex-shrink: 0; }
+.ck-img { display: block; flex-shrink: 0; object-fit: cover; }
+.ck-img.ck-frame { border: 1px solid var(--ck-border-soft); }
+.ck-img.ck-flush { border-radius: 0 !important; width: calc(100% + 2 * var(--ck-pad, 16px)); max-width: none; }
+.ck-badge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 4px;
+  width: max-content;
+  max-width: 100%;
+  border-radius: 6px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ck-row > .ck-badge { align-self: center; }
+.ck-badge-sm { padding: 1px 6px; font-size: 11px; }
+.ck-badge-md { padding: 2px 8px; font-size: 12px; }
+.ck-badge-lg { padding: 3px 10px; font-size: 13px; }
+.ck-badge-soft { background: color-mix(in srgb, var(--ck-tone) var(--ck-tint), transparent); color: var(--ck-tone); }
+.ck-badge-solid { background: var(--ck-tone); color: var(--ck-on-tone, #fff); }
+.ck-badge-outline { border: 1px solid color-mix(in srgb, var(--ck-tone) 45%, transparent); color: var(--ck-tone); }
+.ck-pill { border-radius: 9999px !important; }
+
+/* Buttons */
+.ck-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 0 14px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ck-tone);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, opacity 150ms;
+}
+.ck-btn > span { overflow: hidden; text-overflow: ellipsis; }
+.ck-btn:disabled { cursor: default; opacity: 0.55; }
+.ck-btn-solid { background: var(--ck-tone); border-color: var(--ck-tone); color: var(--ck-on-tone, #fff); }
+.ck-btn-solid:not(:disabled):hover { background: color-mix(in srgb, var(--ck-tone) 88%, var(--ck-on-tone, #fff)); }
+.ck-btn-soft { background: color-mix(in srgb, var(--ck-tone) 12%, transparent); }
+.ck-btn-soft:not(:disabled):hover { background: color-mix(in srgb, var(--ck-tone) 18%, transparent); }
+.ck-btn-outline { border-color: var(--ck-border); color: var(--ck-text); }
+.ck-btn-outline:not(:disabled):hover, .ck-btn-ghost:not(:disabled):hover { background: var(--ck-surface-3); }
+.ck-btn-icon { padding: 0; width: 34px; }
+.ck-size-3xs, .ck-size-2xs { height: 24px; padding: 0 8px; font-size: 12px; border-radius: 7px; }
+.ck-size-xs { height: 28px; padding: 0 10px; font-size: 12.5px; border-radius: 8px; }
+.ck-size-sm { height: 30px; padding: 0 12px; font-size: 13px; }
+.ck-size-lg { height: 38px; padding: 0 16px; font-size: 14px; }
+.ck-size-xl, .ck-size-2xl, .ck-size-3xl { height: 42px; padding: 0 18px; font-size: 15px; }
+.ck-btn-icon.ck-size-3xs, .ck-btn-icon.ck-size-2xs { width: 24px; padding: 0; }
+.ck-btn-icon.ck-size-xs { width: 28px; padding: 0; }
+.ck-btn-icon.ck-size-sm { width: 30px; padding: 0; }
+.ck-block { width: 100%; align-self: stretch; }
+/* The card's body, kept mounted while folded (hidden) so typed values survive. */
+.ck-card-body { display: contents; }
+.ck-card-body[hidden] { display: none; }
+.ck-card-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 2px; }
+.ck-card-actions .ck-btn { flex: 1 1 auto; }
+
+/* Fields */
+.ck-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--ck-border);
+  border-radius: 10px;
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+.ck-field-soft { background: var(--ck-surface-2); border-color: transparent; }
+.ck-input:focus-visible { border-color: var(--ck-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ck-accent) 18%, transparent); }
+.ck-input:disabled { opacity: 0.7; }
+.ck-textarea { resize: vertical; line-height: 1.45; }
+.ck-select { appearance: auto; }
+/* W-18: a Select with ChatKit's `searchable` / `clearable`: a field that opens a menu (search box on top
+ when searchable). The menu opens inline, under the field. */
+.ck-menu-select { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; width: 100%; }
+.ck-menu-trigger-row { position: relative; display: flex; min-width: 0; }
+.ck-menu-trigger { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; cursor: pointer; }
+.ck-menu-trigger:has(+ .ck-menu-clear) { padding-right: 56px; }
+.ck-menu-value, .ck-menu-placeholder { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ck-menu-placeholder { color: var(--ck-text-3); }
+.ck-menu-chevron, .ck-menu-clear svg { flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ck-menu-chevron { color: var(--ck-text-3); }
+.ck-menu-clear { position: absolute; top: 50%; right: 32px; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; transform: translateY(-50%); border: 0; border-radius: 6px; background: none; color: var(--ck-text-3); cursor: pointer; }
+.ck-menu-clear:hover { background: var(--ck-surface-2); color: var(--ck-text); }
+/* Carries the value and `required`'s message; sits under the field, out of sight. */
+.ck-menu-check { position: absolute; bottom: 0; left: 50%; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+.ck-menu { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--ck-border); border-radius: 10px; background: var(--ck-surface); outline: none; }
+.ck-menu-search { margin: 0; padding: 8px 10px; border: 0; border-bottom: 1px solid var(--ck-border); background: transparent; color: var(--ck-text); font: inherit; font-size: 14px; outline: none; }
+.ck-menu-list { max-height: 200px; margin: 0; padding: 4px; overflow-y: auto; overscroll-behavior: contain; list-style: none; }
+.ck-menu-opt { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 6px; color: var(--ck-text); font-size: 14px; cursor: pointer; }
+.ck-menu-opt.ck-active { background: var(--ck-surface-2); }
+.ck-menu-opt svg { flex: none; }
+.ck-menu-opt.ck-off { color: var(--ck-text-3); cursor: default; }
+.ck-menu-empty { padding: 6px 8px; color: var(--ck-text-3); font-size: 13px; }
+.ck-editable { padding: 4px 8px; margin: -4px -8px; width: calc(100% + 16px); border-color: transparent; background: transparent; }
+.ck-editable:hover:not(:disabled) { border-color: var(--ck-border); }
+.ck-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.ck-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--ck-accent); }
+.ck-radios { display: flex; flex-direction: column; gap: 6px; }
+.ck-radios.ck-row-dir { flex-direction: row; flex-wrap: wrap; gap: 14px; }
+
+/* Lists and tables */
+.ck-list { display: flex; flex-direction: column; }
+.ck-item { display: flex; align-items: center; min-width: 0; padding: 8px 12px; border-radius: 12px; background: transparent; border: 0; color: inherit; font: inherit; text-align: left; }
+.ck-item + .ck-item { border-top: 1px solid var(--ck-border-soft); border-radius: 0; }
+.ck-item-btn { width: 100%; cursor: pointer; }
+.ck-item-btn:not([aria-disabled="true"]):hover { background: var(--ck-surface-3); }
+.ck-item-btn[aria-disabled="true"] { cursor: default; }
+.ck-item-btn[aria-disabled="true"]:hover { background: transparent; }
+.ck-item-btn:focus-visible { outline: 2px solid var(--ck-accent); outline-offset: -2px; }
+.ck-item-used > :not(.ck-item-done) { opacity: 0.6; }
+.ck-item-done { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0; color: var(--ck-success); font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+.ck-more { margin: 4px 12px 8px; padding: 0; border: 0; background: none; color: var(--ck-text-2); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.ck-more:hover { color: var(--ck-text); }
+.ck-table-wrap { overflow-x: auto; }
+.ck-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.ck-table td, .ck-table th { padding: 6px 8px; border-bottom: 1px solid var(--ck-border-soft); text-align: left; vertical-align: middle; }
+.ck-table tr:last-child td { border-bottom: 0; }
+.ck-table .ck-th th { color: var(--ck-text-2); font-weight: 500; font-size: 12.5px; }
+
+/* Chart */
+.ck-chart { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.ck-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ck-grid { stroke: var(--ck-border-soft); stroke-width: 1; }
+.ck-tick { fill: var(--ck-text-3); font-size: 10.5px; font-family: inherit; }
+.ck-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--ck-text-2); font-size: 12px; }
+.ck-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.ck-legend i { width: 8px; height: 8px; border-radius: 2px; }
+
+/* Status line above a card, and the note under a used one */
+.ck-status { display: flex; align-items: center; gap: 6px; padding: 0 2px; color: var(--ck-text-2); font-size: 12.5px; }
+.ck-status img { border-radius: 3px; }
+.ck-used .ck-card { opacity: 0.92; }
+.ck-used-note { display: flex; align-items: center; gap: 5px; padding: 0 2px; color: var(--ck-text-3); font-size: 12px; }
+/* D-51: ChatKit's `collapsed` card (and a used card): one row that opens the body. */
+.ck-fold { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; margin: 0; padding: 2px 0; border: 0; background: none; color: var(--ck-text); font: inherit; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
+.ck-fold-icon { display: inline-flex; flex-shrink: 0; color: var(--ck-text-2); }
+.ck-fold-icon img { width: 16px; height: 16px; border-radius: 3px; }
+.ck-fold-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ck-fold-used { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; max-width: 45%; color: var(--ck-success); font-size: 12.5px; }
+.ck-fold-used span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ck-fold-chev { flex-shrink: 0; fill: none; stroke: var(--ck-text-3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 150ms; }
+.ck-fold-chev.ck-open { transform: rotate(180deg); }
+.ck-fold:focus-visible { outline: 2px solid var(--ck-accent); outline-offset: 2px; border-radius: 6px; }
+.ck-used .ck-fold { opacity: 1; }
+/* D-51: what's busy while an action or a field change is sent (ChatKit's loadingBehavior). */
+.ck-spinner { display: inline-block; flex-shrink: 0; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; opacity: 0.8; animation: ck-spin 700ms linear infinite; }
+@keyframes ck-spin { to { transform: rotate(360deg); } }
+.ck-busy { cursor: progress; }
+.ck-input.ck-busy, .ck-check.ck-busy, .ck-radios.ck-busy, .ck-img.ck-busy, .ck-clickable.ck-busy { opacity: 0.6; }
+.ck-item.ck-busy { opacity: 0.6; }
+.ck-change-error { padding: 0 2px; color: var(--ck-danger); font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .ck-spinner { animation-duration: 1.6s; } }
+
+/* Dark details the tokens alone don't cover. */
+.ck-dark .ck-card, .ck-dark.ck-card { box-shadow: none; }
+.ck-dark .ck-btn-soft { background: color-mix(in srgb, var(--ck-tone) 18%, transparent); }
+.ck-dark .ck-btn-soft:not(:disabled):hover { background: color-mix(in srgb, var(--ck-tone) 26%, transparent); }
+.ck-dark .ck-btn-outline { border-color: rgba(255, 255, 255, 0.18); }
+.ck-dark .ck-input:focus-visible { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.5); }
+.ck-dark .ck-input::placeholder { color: var(--ck-text-3); }
+.ck-dark .ck-img.ck-frame { border-color: var(--ck-border); }
+
+/* Bare (WidgetCard `bare`): the card is the answer itself, in a host that has its own surface and
+   ~16–20px side padding. The root Card or ListView loses its frame (no border, shadow, background
+   or radius) and its side padding, so its content lines up with the host's text edge. List rows
+   keep 10px of inner padding for their hover and pull out by as much, so their text lines up too
+   (the host needs ≥ 10px of side padding). A root Card with its own background or theme stays a
+   tile: its background and radius, no border or shadow. */
+.ck-bare { gap: 8px; }
+.ck-bare > .ck-card-bare {
+  --ck-pad: 0px;
+  padding: 2px 0 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.ck-bare > .ck-card-bare.ck-card-list { margin-inline: -10px; padding: 0; }
+.ck-bare > .ck-card-list .ck-item { padding: 9px 10px; border-radius: 10px; }
+.ck-bare > .ck-card-list .ck-item + .ck-item { position: relative; border-top: 0; border-radius: 10px; }
+.ck-bare > .ck-card-list .ck-item + .ck-item::before { content: ""; position: absolute; top: 0; left: 10px; right: 10px; border-top: 1px solid var(--ck-border-soft); }
+.ck-bare > .ck-card-list .ck-item-btn:not([aria-disabled="true"]):hover::before,
+.ck-bare > .ck-card-list .ck-item-btn:not([aria-disabled="true"]):hover + .ck-item::before { opacity: 0; }
+.ck-bare > .ck-card-list .ck-more { margin: 4px 10px 2px; }
+.ck-bare > .ck-card-tile { border: 0; box-shadow: none; }
+.ck-bare > .ck-status { padding: 0; gap: 5px; color: var(--ck-text-3); font-size: 12px; font-weight: 500; }
+.ck-bare > .ck-used-note { padding: 0; }
+
+/* WidgetPeek: a folded card, one quiet row (~40px) that opens it. */
+.ck-peek {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ck-surface-2);
+  color: var(--ck-text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms;
+}
+.ck-peek:hover { background: var(--ck-surface-3); }
+.ck-peek:focus-visible { outline: 2px solid var(--ck-accent); outline-offset: 1px; }
+.ck-peek-icon { display: inline-flex; flex-shrink: 0; color: var(--ck-text-2); }
+/* D-76: a used widget's chip: a check, in the success colour. */
+.ck-peek-used .ck-peek-icon { color: var(--ck-success, #16a34a); }
+.ck-peek-icon img { width: 16px; height: 16px; border-radius: 3px; }
+.ck-peek-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ck-peek-chev { display: inline-flex; flex-shrink: 0; color: var(--ck-text-3); transition: transform 150ms, color 150ms; }
+.ck-peek:hover .ck-peek-chev { color: var(--ck-text-2); transform: translateX(1px); }
+
+/* The inbox shows what the visitor saw, at chat width. */
+.ai-widget { width: 100%; max-width: 400px; margin: 4px 0; }
+.widget-values { margin-top: 2px; }
+/* W-27: an action's widget_done line under the press it answered, on the reply's side. */
+.widget-done { display: flex; align-items: flex-start; gap: 6px; font-size: 14px; line-height: 20px; text-align: left; }
+.widget-done svg { flex: none; margin-top: 3px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; color: var(--ck-success, #16a34a); }
+/* A reply with a card takes the chat's full width, also while it streams (rows otherwise fit their content). */
+.msg.ai:has(> .w-answer .ck) { width: 100%; }
+.msg.ai > .w-answer:has(.ck) { justify-self: stretch; width: 100%; }

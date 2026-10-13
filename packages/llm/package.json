@@ -1,0 +1,11 @@
+{
+  "name": "@jun/llm",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "description": "LLM providers for Jun Desk. Web-standard APIs only, so it runs on Node and Cloudflare Workers.",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

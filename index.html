@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jun Desk</title>
+    <!-- I-14: on iPhone/iPad, Web Push needs the desk added to the Home Screen as a web app. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Light/dark before first paint (no flash); same rule as web/lib/theme.ts. -->
+    <script>
+      var t = null;
+      try { t = localStorage.getItem("jun-theme"); } catch (e) {}
+      document.documentElement.dataset.theme = t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/web/main.tsx"></script>
+  </body>
+</html>

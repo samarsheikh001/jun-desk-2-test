@@ -1,0 +1,4 @@
+interface:
+  display_name: "Copy Component"
+  short_description: "Copy exact UI components from references"
+  default_prompt: "Use $copy-component to copy a navbar from a reference URL."

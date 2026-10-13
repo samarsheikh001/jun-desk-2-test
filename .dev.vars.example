@@ -1,0 +1,3 @@
+# Choose any long passphrase (16+ characters). You'll enter it once on first visit
+# to create the owner account, and again only if you ever need to recover access.
+SETUP_TOKEN=

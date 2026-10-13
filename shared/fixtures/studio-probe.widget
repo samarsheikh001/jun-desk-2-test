@@ -1,0 +1,181 @@
+{
+  "version": "1.0",
+  "name": "Create Event",
+  "template": "{\"type\":\"Card\",\"size\":\"md\",\"status\":{\"text\":{{ ((\"Order \" ~ order.id)) | tojson }},\"icon\":\"cube\"},\"children\":[{%- set _c -%},{\"type\":\"Title\",\"value\":{{ ((name ~ \" (#\" ~ number ~ \")\")) | tojson }}},{\"type\":\"Text\",\"value\":{{ ((\"$\" ~ order.total)) | tojson }}},{\"type\":\"Text\",\"value\":{{ (((items | length) ~ \" items\")) | tojson }}}{%-if flag -%},{\"type\":\"Badge\",\"label\":\"Flag\",\"color\":\"success\"}{%-else-%}{%-endif-%}{%-if not (flag) -%},{\"type\":\"Badge\",\"label\":\"NoFlag\"}{%-else-%}{%-endif-%}{%-if note -%},{\"type\":\"Text\",\"value\":{{ (note) | tojson }}}{%-else-%}{%-endif-%},{\"type\":\"Text\",\"value\":{{ (note or \"none\") | tojson }}},{\"type\":\"Text\",\"value\":{{ (note if note is defined and note is not none else \"dflt\") | tojson }}},{\"type\":\"Text\",\"value\":{% if count > 2 %}\"many\"{% else %}\"few\"{% endif %}},{\"type\":\"Text\",\"value\":{% if ((status == \"open\") and (count >= 1)) %}\"a\"{% else %}\"b\"{% endif %}},{\"type\":\"Text\",\"value\":{{ (items[0].title) | tojson }}},{\"type\":\"Text\",\"value\":{{ (order[\"id\"]) | tojson }}},{\"type\":\"Box\",\"background\":{\"light\":\"red-100\",\"dark\":\"red-900\"},\"padding\":{{ ((count * 2)) | tojson }}}{%-for item in items -%}{%-set index = loop.index0 -%},{\"type\":\"Row\",\"key\":{{ (item.id) | tojson }},\"children\":[{%- set _c -%},{\"type\":\"Caption\",\"value\":{{ (((index + 1))) | tojson }}},{\"type\":\"Text\",\"value\":{{ (item.title) | tojson }}}{%-for t in item.tags -%},{\"type\":\"Badge\",\"key\":{{ (t) | tojson }},\"label\":{{ (t) | tojson }}}{%-endfor-%}{%- endset -%}{{- (_c[1:] if _c and _c[0] == ',' else _c) -}}]}{%-endfor-%},{\"type\":\"Button\",\"label\":\"Go\",\"onClickAction\":{\"type\":\"order.view\",\"payload\":{\"id\":{{ (order.id) | tojson }},\"n\":{{ (count) | tojson }}}}}{%- endset -%}{{- (_c[1:] if _c and _c[0] == ',' else _c) -}}]}",
+  "jsonSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "number": {
+        "type": "number"
+      },
+      "order": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "total"
+        ],
+        "additionalProperties": false
+      },
+      "count": {
+        "type": "number"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "title",
+            "tags"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "flag": {
+        "type": "boolean"
+      },
+      "note": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "number",
+      "order",
+      "count",
+      "items",
+      "flag",
+      "note",
+      "status"
+    ],
+    "additionalProperties": false
+  },
+  "outputJsonPreview": {
+    "type": "Card",
+    "size": "md",
+    "status": {
+      "text": "Order A1",
+      "icon": "cube"
+    },
+    "children": [
+      {
+        "type": "Title",
+        "value": "Ann (#7)"
+      },
+      {
+        "type": "Text",
+        "value": "$12.5"
+      },
+      {
+        "type": "Text",
+        "value": "1 items"
+      },
+      {
+        "type": "Badge",
+        "label": "Flag",
+        "color": "success"
+      },
+      {
+        "type": "Text",
+        "value": "hi"
+      },
+      {
+        "type": "Text",
+        "value": "hi"
+      },
+      {
+        "type": "Text",
+        "value": "hi"
+      },
+      {
+        "type": "Text",
+        "value": "many"
+      },
+      {
+        "type": "Text",
+        "value": "a"
+      },
+      {
+        "type": "Text",
+        "value": "T"
+      },
+      {
+        "type": "Text",
+        "value": "A1"
+      },
+      {
+        "type": "Box",
+        "background": {
+          "light": "red-100",
+          "dark": "red-900"
+        },
+        "padding": 6
+      },
+      {
+        "type": "Row",
+        "key": "x",
+        "children": [
+          {
+            "type": "Caption",
+            "value": "1"
+          },
+          {
+            "type": "Text",
+            "value": "T"
+          },
+          {
+            "type": "Badge",
+            "key": "a",
+            "label": "a"
+          },
+          {
+            "type": "Badge",
+            "key": "b",
+            "label": "b"
+          }
+        ]
+      },
+      {
+        "type": "Button",
+        "label": "Go",
+        "onClickAction": {
+          "type": "order.view",
+          "payload": {
+            "id": "A1",
+            "n": 3
+          }
+        }
+      }
+    ]
+  },
+  "encodedWidget": "eyJpZCI6IndpZ18zbmlrcThwZCIsIm5hbWUiOiJDcmVhdGUgRXZlbnQiLCJ2aWV3IjoiPENhcmQgc2l6ZT1cIm1kXCIgc3RhdHVzPXt7IHRleHQ6IGBPcmRlciAke29yZGVyLmlkfWAsIGljb246IFwiY3ViZVwiIH19PlxuICA8VGl0bGUgdmFsdWU9e2Ake25hbWV9ICgjJHtudW1iZXJ9KWB9IC8-XG4gIDxUZXh0IHZhbHVlPXtcIiRcIiArIG9yZGVyLnRvdGFsfSAvPlxuICA8VGV4dCB2YWx1ZT17aXRlbXMubGVuZ3RoICsgXCIgaXRlbXNcIn0gLz5cbiAge2ZsYWcgJiYgPEJhZGdlIGxhYmVsPVwiRmxhZ1wiIGNvbG9yPVwic3VjY2Vzc1wiIC8-fVxuICB7IWZsYWcgJiYgPEJhZGdlIGxhYmVsPVwiTm9GbGFnXCIgLz59XG4gIHtub3RlID8gPFRleHQgdmFsdWU9e25vdGV9IC8-IDogbnVsbH1cbiAgPFRleHQgdmFsdWU9e25vdGUgfHwgXCJub25lXCJ9IC8-XG4gIDxUZXh0IHZhbHVlPXtub3RlID8_IFwiZGZsdFwifSAvPlxuICA8VGV4dCB2YWx1ZT17Y291bnQgPiAyID8gXCJtYW55XCIgOiBcImZld1wifSAvPlxuICA8VGV4dCB2YWx1ZT17c3RhdHVzID09PSBcIm9wZW5cIiAmJiBjb3VudCA-PSAxID8gXCJhXCIgOiBcImJcIn0gLz5cbiAgPFRleHQgdmFsdWU9e2l0ZW1zWzBdLnRpdGxlfSAvPlxuICA8VGV4dCB2YWx1ZT17b3JkZXJbXCJpZFwiXX0gLz5cbiAgPEJveCBiYWNrZ3JvdW5kPXt7IGxpZ2h0OiBcInJlZC0xMDBcIiwgZGFyazogXCJyZWQtOTAwXCIgfX0gcGFkZGluZz17Y291bnQgKiAyfSAvPlxuICB7aXRlbXMubWFwKChpdGVtLCBpbmRleCkgPT4gKFxuICAgIDxSb3cga2V5PXtpdGVtLmlkfT5cbiAgICAgIDxDYXB0aW9uIHZhbHVlPXtgJHtpbmRleCArIDF9YH0gLz5cbiAgICAgIDxUZXh0IHZhbHVlPXtpdGVtLnRpdGxlfSAvPlxuICAgICAge2l0ZW0udGFncy5tYXAoKHQpID0-IDxCYWRnZSBrZXk9e3R9IGxhYmVsPXt0fSAvPil9XG4gICAgPC9Sb3c-XG4gICkpfVxuICA8QnV0dG9uIGxhYmVsPVwiR29cIiBvbkNsaWNrQWN0aW9uPXt7IHR5cGU6IFwib3JkZXIudmlld1wiLCBwYXlsb2FkOiB7IGlkOiBvcmRlci5pZCwgbjogY291bnQgfSB9fSAvPlxuPC9DYXJkPiIsImRlZmF1bHRTdGF0ZSI6eyJuYW1lIjoiQW5uIiwibnVtYmVyIjo3LCJvcmRlciI6eyJpZCI6IkExIiwidG90YWwiOjEyLjV9LCJjb3VudCI6MywiaXRlbXMiOlt7ImlkIjoieCIsInRpdGxlIjoiVCIsInRhZ3MiOlsiYSIsImIiXX1dLCJmbGFnIjp0cnVlLCJub3RlIjoiaGkiLCJzdGF0dXMiOiJvcGVuIn0sInNjaGVtYU1vZGUiOiJ6b2QiLCJqc29uU2NoZW1hIjp7fSwic2NoZW1hIjoiaW1wb3J0IHsgeiB9IGZyb20gXCJ6b2RcIlxuY29uc3QgUyA9IHoub2JqZWN0KHsgbmFtZTogei5zdHJpbmcoKSwgbnVtYmVyOiB6Lm51bWJlcigpLCBvcmRlcjogei5vYmplY3QoeyBpZDogei5zdHJpbmcoKSwgdG90YWw6IHoubnVtYmVyKCkgfSksIGNvdW50OiB6Lm51bWJlcigpLCBpdGVtczogei5hcnJheSh6Lm9iamVjdCh7IGlkOiB6LnN0cmluZygpLCB0aXRsZTogei5zdHJpbmcoKSwgdGFnczogei5hcnJheSh6LnN0cmluZygpKSB9KSksIGZsYWc6IHouYm9vbGVhbigpLCBub3RlOiB6LnN0cmluZygpLCBzdGF0dXM6IHouc3RyaW5nKCkgfSlcbmV4cG9ydCBkZWZhdWx0IFMiLCJzdGF0ZXMiOltdLCJzY2hlbWFWYWxpZGl0eSI6InZhbGlkIiwidmlld1ZhbGlkaXR5IjoidmFsaWQiLCJkZWZhdWx0U3RhdGVWYWxpZGl0eSI6InZhbGlkIn0"
+}

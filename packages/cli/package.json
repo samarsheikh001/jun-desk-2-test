@@ -1,0 +1,14 @@
+{
+  "name": "@jun/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "description": "Jun Desk developer CLI.",
+  "bin": {
+    "jun": "./src/index.ts"
+  },
+  "dependencies": {
+    "@jun/llm": "*"
+  }
+}

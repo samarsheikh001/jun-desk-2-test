@@ -1,0 +1,782 @@
+/* Widget frame: fills the iframe the loader creates. */
+html, body, #root { height: 100%; }
+/* The frame never scrolls as a page (its lists do): while the loader resizes it, e.g. from the
+   closed card to the open panel, the panel may be drawn once in a smaller frame. */
+html, body { overflow: hidden; }
+body { background: var(--surface); }
+.w-opener { margin: 16px 16px 0; }
+
+/* W-08: offline email capture, and W-12: "How did we do?" (base; the bar and the window restyle them). */
+.w-email { display: grid; gap: 6px; margin: 0; padding: 8px 12px; background: var(--tag); border-top: 1px solid var(--border); }
+.w-email input { flex: 1; min-width: 0; }
+.w-csat { display: grid; gap: 6px; margin: 0; padding: 8px 12px; background: var(--tag); border-top: 1px solid var(--border); }
+.w-csat .row { gap: 8px; }
+.w-csat textarea { resize: none; }
+button.w-thumb { padding: 2px 10px; font-size: 1.1rem; line-height: 1.4; background: var(--surface); }
+button.w-thumb:hover:not(:disabled) { border-color: var(--accent); }
+
+/* ---------- The chat window (button and card launchers, D-34) ----------
+   The earlier Jun Desk widget's stylesheet (its public/widget.css), rule for rule, on our markup:
+   .panel is .w-shell (its place, size, border and corners are the loader's frame), .header
+   .w-head, .msg.user the visitor's .bubble and .msg.assistant everyone else's, .composer2 and
+   .composer-wrap the composer, .footer-brand .w-badge. The card launcher's closed state (.mini,
+   then .launcher) is .w-closed, drawn here (card.tsx). Its radii are the corner rounding setting
+   (--radius) and 0.75, 0.625 and 0.5 of it. */
+:root { --radius: calc(var(--r-md) * 8 / 7); --radius-md: calc(var(--radius) * 0.75); --radius-sm: calc(var(--radius) * 0.625); --radius-xs: calc(var(--radius) * 0.5); }
+.w-shell, .w-closed { color: var(--text); font-family: "Jun Desk Outfit", Arial, sans-serif; font-size: 14px; line-height: 1.5; }
+.w-shell { height: 100%; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); }
+:is(.w-shell, .w-closed) button, :is(.w-shell, .w-closed) input, :is(.w-shell, .w-closed) textarea { font: inherit; color: inherit; }
+:is(.w-shell, .w-closed) button { cursor: pointer; padding: 1px 6px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-sm); transition: background 0.15s, box-shadow 0.15s; }
+:is(.w-shell, .w-closed) button:hover { background: var(--hover); }
+:is(.w-shell, .w-closed) button:disabled { cursor: default; opacity: 0.45; }
+:is(.w-shell, .w-closed) :is(button, input, a, [role="button"]):focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+:is(.w-shell, .w-closed) svg { width: 18px; height: 18px; flex-shrink: 0; }
+:is(.w-shell, .w-closed) img { display: block; }
+.w-shell code, .w-shell pre { font-family: "Jun Desk Mono", monospace; }
+
+/* Header */
+.w-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border-soft); flex-shrink: 0; }
+.w-title { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.w-agent-icon { width: 36px; height: 36px; object-fit: contain; border-radius: var(--radius-xs); }
+.w-name-wrap { display: flex; flex-direction: column; min-width: 0; }
+.w-name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-sub { font-size: 12px; color: var(--muted); }
+.w-hdr-actions { display: flex; gap: 4px; }
+.w-shell .w-hdr-btn, .w-shell .w-close, .w-shell .w-x { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; background: transparent; color: var(--muted); }
+.w-shell .w-close, .w-shell .w-x { font-size: 23px; font-weight: 300; }
+.w-shell .w-x { width: 22px; height: 22px; font-size: 18px; }
+.w-shell .w-hdr-btn:hover, .w-shell .w-close:hover, .w-shell .w-x:hover { background: var(--hover); }
+
+/* W-04 suggested questions over the action row: tapping one sends it; × hides them. */
+.w-suggest { padding: 0 16px 8px; flex-shrink: 0; }
+.w-suggest-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 3px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.w-suggest-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.w-shell .w-suggest-item { text-align: left; padding: 5px 9px; font-size: 11px; line-height: 1.5; background: var(--bg); border-radius: var(--radius-xs); }
+/* "Contact the team" and "Start a new chat" (.action-row) */
+.w-actions { display: flex; gap: 6px; padding: 0 16px 8px; flex-shrink: 0; }
+.w-shell .w-action-btn { flex: 1; padding: 5px 6px; font-size: 11px; line-height: 1.5; font-weight: 500; white-space: nowrap; border-radius: var(--radius-xs); }
+/* AI-20 intent chats: the opening's quick replies, and the exit button (D-37: always on screen, under the header, one click). */
+.w-replies { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+:is(.w-shell, .b-panel) .w-reply { text-align: left; padding: 5px 9px; font-size: 11px; line-height: 1.5; background: var(--bg); color: inherit; border: 1px solid var(--border); border-radius: var(--radius-xs); }
+.w-exit { display: flex; justify-content: flex-end; padding: 6px 16px; border-bottom: 1px solid var(--border-soft); flex-shrink: 0; }
+.b-panel .w-exit { padding: 8px 16px 0; border: 0; }
+:is(.w-shell, .b-panel) .w-exit-btn { padding: 4px 12px; font-size: 12px; line-height: 1.5; font-weight: 500; background: var(--bg); color: inherit; border: 1px solid var(--border); border-radius: var(--radius-xs); }
+/* "Built with Jun Desk" (.footer-brand) */
+.w-badge { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 4px 0 12px; color: var(--muted); font-size: 10px; flex-shrink: 0; }
+:is(.w-shell, .w-closed) .w-badge-logo { width: 14px; height: 14px; }
+.w-badge.mini { padding-bottom: 12px; }
+
+/* The card launcher, closed (.launcher-wrap): the frame is this size, and transparent around it. */
+/* Light like the frame (the loader sets color-scheme:normal on it): a dark root inside a light
+   frame gets an opaque canvas, which squares off the card's corners. Beats :root[data-theme]. */
+:root.mini, :root.mini[data-theme] { color-scheme: light; }
+html.mini, html.mini body, html.mini #root { background: transparent; }
+html.mini body { overflow: hidden; }
+.w-closed { display: flow-root; }
+.w-mini { width: 100%; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius); box-shadow: none; overflow: hidden; }
+.w-mini-head { position: relative; display: flex; flex-direction: row; align-items: baseline; gap: 7px; padding: 16px 44px 0 18px; }
+.w-mini-head.has-logo { align-items: center; }
+.w-closed .w-mini-logo { width: 22px; height: 22px; border-radius: var(--radius-xs); object-fit: contain; flex-shrink: 0; }
+.w-mini-name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-mini-sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-closed .w-mini-x { position: absolute; right: 12px; top: 12px; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; background: transparent; color: var(--muted); }
+.w-closed .w-mini-x:hover { background: var(--hover); }
+.w-mini-welcome { margin: 16px 18px; color: var(--text-soft); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap; }
+.w-mini-actions { display: flex; gap: 8px; margin: 0 18px 14px; }
+.w-closed .w-mini-act { flex: 1; padding: 8px 6px; font-size: 12px; background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.w-closed .w-mini-act:hover { background: var(--accent-hover); }
+.w-closed .w-mini-composer { display: flex; align-items: center; justify-content: space-between; width: calc(100% - 32px); min-height: 46px; margin: 0 16px 8px; padding: 4px 4px 4px 12px; background: var(--field); }
+.w-mini-ph { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-mini-send { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; background: var(--accent); color: var(--accent-text); border: 0; border-radius: var(--radius-sm); }
+/* Hidden for this page: the "Chat with us" pill (.launcher). */
+.w-closed .w-launcher { display: block; width: max-content; padding: 12px 18px; background: var(--accent); color: var(--accent-text); box-shadow: none; }
+.w-closed .w-launcher:hover { background: var(--accent-hover); }
+
+/* The visitor's earlier conversations (the reference had one chat at a time): suggestion-list type, button rows. */
+.w-home { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; }
+.w-history { flex: 1; padding: 20px 16px 16px; }
+.w-history ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.w-shell .w-conv { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; text-align: left; }
+.w-conv-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.w-conv-preview { font-size: 13px; color: var(--text-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-conv.unread .w-conv-preview { color: var(--text); font-weight: 600; }
+.w-conv-meta { font-size: 11px; color: var(--muted); }
+.w-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: var(--accent); }
+
+/* Thread: the visitor's messages in the bubble colour, replies as text. */
+.w-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; }
+/* Scrollbars: a thin rounded thumb in the theme's colours, no arrow buttons, faint until hovered.
+   Not scrollbar-width/-color: Chrome on Windows then draws its classic bar, arrows and all, and
+   ignores the ::-webkit-scrollbar rules. Firefox (no ::-webkit-scrollbar) gets the standard ones. */
+:is(.w-body, .w-home, .b-log)::-webkit-scrollbar { width: 10px; height: 10px; }
+:is(.w-body, .w-home, .b-log)::-webkit-scrollbar-track, :is(.w-body, .w-home, .b-log)::-webkit-scrollbar-corner { background: transparent; }
+:is(.w-body, .w-home, .b-log)::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+:is(.w-body, .w-home)::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 10px; background: color-mix(in srgb, var(--muted) 30%, transparent) padding-box; }
+:is(.w-body, .w-home):hover::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--muted) 55%, transparent); }
+.b-log::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 10px; background: rgba(255, 255, 255, 0.18) padding-box; }
+.b-log:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.32); }
+@supports not selector(::-webkit-scrollbar) {
+  .w-body, .w-home { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted) 40%, transparent) transparent; }
+  .b-log { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
+}
+/* A new chat's greeting, where the reference put it: the first reply. */
+.w-greet { margin: 0; padding: 20px 22px 0; color: var(--text-soft); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap; }
+.w-shell .w-greet + .messages { padding-top: 14px; }
+.w-shell .w-opener { margin: 20px 18px 0; }
+.w-shell .messages { flex: none; overflow: visible; padding: 20px 18px; gap: 0; }
+.w-shell .msg { max-width: 100%; margin-bottom: 14px; font-size: 14px; line-height: 1.6; }
+.w-shell .msg.own { margin-left: auto; max-width: 88%; }
+.w-shell .msg .author, .w-shell .msg .meta { margin: 0 4px 2px; font-size: 12px; color: var(--muted); }
+.w-shell .bubble { padding: 0 4px; border: 0; border-radius: 0; background: none; color: var(--text-soft); overflow-wrap: anywhere; white-space: pre-wrap; }
+.w-shell .msg.ai .bubble { background: none; color: var(--text-soft); }
+.w-shell .msg.own .bubble { width: fit-content; padding: 10px 14px; border-radius: var(--radius-md); background: var(--bubble); color: var(--bubble-text); }
+.w-shell .bubble code { font-family: "Jun Desk Mono", monospace; font-size: 0.88em; background: var(--code); border-radius: 4px; padding: 0.15em 0.35em; white-space: break-spaces; }
+.w-shell .bubble a, .w-shell .sources a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+.w-shell .cite { padding: 0 3px; border-radius: 4px; background: var(--code); color: var(--link); text-decoration: none; }
+.w-shell .sources { margin: 4px 4px 0; font-size: 12px; color: var(--muted); }
+.w-shell .seen, .w-shell .msg > .muted.small, .w-shell .msg > .error.small { margin: 2px 4px 0; font-size: 12px; }
+.w-shell .attachments img { border-color: var(--border); border-radius: var(--radius-md); }
+.w-shell .attachments .file { border-color: var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: 13px; }
+.w-shell .system-msg { font-size: 12px; color: var(--muted); }
+/* Loading: message-shaped placeholders with a slow sheen (WidgetApp's ThreadSkeleton). */
+.w-composer-wrap { flex-shrink: 0; }
+.w-composer-wrap[inert] { opacity: 0.6; }
+:is(.w-shell, .b-log) .messages.w-skel, .w-skel { --sk: color-mix(in srgb, var(--text) 7%, transparent); --sk-hi: color-mix(in srgb, var(--text) 13%, transparent); display: flex; flex-direction: column; gap: 18px; animation: w-fade 300ms ease-out both; }
+.w-skel-row { display: flex; flex-direction: column; gap: 8px; padding: 0 4px; }
+.w-skel-row.own { align-items: flex-end; }
+.w-skel-row > span { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--sk) 30%, var(--sk-hi) 50%, var(--sk) 70%) 0 0 / 300% 100%; animation: w-sheen 1.6s ease-in-out infinite; }
+.w-skel-row.own > span { height: 40px; border-radius: var(--radius-md); }
+@keyframes w-sheen { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.b-log .messages.w-skel { --sk: rgba(255, 255, 255, 0.08); --sk-hi: rgba(255, 255, 255, 0.16); display: flex; }
+.b-log .w-skel-row.own > span { border-radius: 16px; }
+@media (prefers-reduced-motion: reduce) { .w-skel-row > span { animation: none; } }
+/* "Thinking…" pixel grid (PixelLoader) */
+.w-shell .bubble.typing { display: flex; align-items: center; gap: 3px; min-height: 22px; padding: 0 4px; }
+.w-shell .typing { color: var(--focus); }
+
+/* W-08 and W-12 over the composer, in the quote draft's colours, with the welcome card's buttons. */
+.w-shell .w-email, .w-shell .w-csat { gap: 8px; margin: 0 16px 8px; padding: 8px 10px; border: 1px solid var(--border-soft); border-radius: var(--radius-md); background: var(--quote); color: var(--text-soft); font-size: 12px; }
+.w-shell .w-email .row, .w-shell .w-csat .row { gap: 6px; }
+.w-shell .w-email input, .w-shell .w-csat textarea { padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--field); font-size: 13px; outline: none; }
+.w-shell .w-email input:focus, .w-shell .w-csat textarea:focus { border-color: #a3a3a3; }
+.w-shell .w-email button:not(.w-x), .w-shell .w-csat button:not(.w-x, .w-thumb) { padding: 8px 6px; min-width: 64px; font-size: 12px; }
+.w-shell .w-email button:not(.w-x, .ghost), .w-shell .w-csat button:not(.w-x, .w-thumb, .ghost) { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.w-shell .w-email button:not(.w-x, .ghost):hover, .w-shell .w-csat button:not(.w-x, .w-thumb, .ghost):hover { background: var(--accent-hover); }
+.w-shell button.w-thumb { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; font-size: 15px; line-height: 1; }
+
+/* The composer (pill mode of the shared Composer): one box (.composer-box) with "+", the input and
+   Send in a grid; once the text wraps (.wide) the input takes the first row and the buttons go
+   under it. "+" opens .composer-menu (files, screenshot) with one gliding highlight. The parts
+   every launcher shares come first; the window and the bar then set their own look. */
+.composer.pill { position: relative; }
+.composer-box { position: relative; display: flex; flex-direction: column; gap: 6px; }
+.composer-measure { position: absolute; visibility: hidden; white-space: pre; pointer-events: none; }
+.composer-grid { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; column-gap: 4px; row-gap: 6px; }
+.composer-grid > .composer-plus { grid-area: 1 / 1; }
+.composer-grid > textarea { grid-area: 1 / 2; min-width: 0; width: 100%; resize: none; overflow-wrap: anywhere; }
+.composer-grid > .composer-send { grid-area: 1 / 3; }
+.composer-box.wide .composer-grid > textarea { grid-area: 1 / 1 / 2 / -1; }
+.composer-box.wide .composer-grid > .composer-plus { grid-area: 2 / 1; }
+.composer-box.wide .composer-grid > .composer-send { grid-area: 2 / 3; }
+.composer.pill .composer-plus, .composer.pill .composer-send { display: grid; place-items: center; padding: 0; border: 0; transition: background-color 150ms, color 150ms, transform 150ms; }
+.composer.pill .composer-plus:active:not(:disabled), .composer.pill .composer-send:active:not(:disabled) { transform: scale(0.94); }
+.composer.pill .composer-plus svg { width: 17px; height: 17px; }
+.composer.pill .composer-send svg { width: 16px; height: 16px; }
+.composer.pill .composer-files { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 2px 2px 0; }
+.composer-file { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; height: 26px; padding: 0 2px 0 7px; font-size: 12px; animation: c-pop 200ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.composer-file svg { width: 13px; height: 13px; }
+.composer-file-name { min-width: 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer.pill .composer-file button { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; background: transparent; color: inherit; opacity: 0.6; }
+.composer.pill .composer-file button:hover { opacity: 1; }
+.composer.pill .composer-file button svg { width: 10px; height: 10px; }
+.composer-menu { position: absolute; z-index: 5; padding: 4px; animation: c-pop 180ms cubic-bezier(0.23, 1, 0.32, 1) both; transform-origin: bottom left; }
+.composer-menu-glide { position: absolute; left: 4px; right: 4px; pointer-events: none; transition: top 220ms cubic-bezier(0.23, 1, 0.32, 1), height 220ms cubic-bezier(0.23, 1, 0.32, 1), opacity 150ms ease; }
+.composer.pill .composer-menu button { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; height: 36px; padding: 0 8px; border: 0; background: transparent; text-align: left; white-space: nowrap; }
+.composer.pill .composer-menu button:hover { background: transparent; }
+.composer.pill .composer-menu button:focus-visible { outline: none; }
+.composer-menu-icon { display: grid; place-items: center; width: 22px; flex-shrink: 0; }
+.composer-menu-icon svg { width: 16px; height: 16px; }
+.composer-menu-label { flex-shrink: 0; font-size: 13px; font-weight: 500; }
+.composer-menu-desc { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 12px; opacity: 0.6; }
+@keyframes c-pop { from { opacity: 0; transform: scale(0.96) translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* The chat window (button and card launchers) */
+.w-shell .composer.pill { padding: 12px 16px 8px; border-top: 1px solid var(--border-soft); background: var(--surface); flex-shrink: 0; }
+/* No outline or shadow: a flat filled box. */
+.w-shell .composer-box { padding: 6px; border-radius: var(--radius); background: var(--hover); }
+.w-shell .composer.pill textarea { min-height: 30px; max-height: 120px; margin: 0; padding: 5px 6px; border: 0; border-radius: 0; background: transparent; font-size: 13px; line-height: 20px; outline: none; }
+.w-shell .composer.pill textarea::placeholder { color: var(--muted); }
+.w-shell .composer-plus { width: 30px; height: 30px; border-radius: var(--radius-xs); background: transparent; color: var(--muted); }
+.w-shell .composer-plus:hover:not(:disabled), .w-shell .composer-plus.active { background: var(--hover); color: var(--text); }
+.w-shell .composer-send { width: 30px; height: 30px; border-radius: var(--radius-xs); background: var(--accent); color: var(--accent-text); }
+.w-shell .composer-send:hover:not(:disabled) { background: var(--accent-hover); }
+.w-shell .composer.pill .composer-send:disabled { opacity: 1; background: var(--border); color: var(--muted); }
+.w-shell .composer-file { border-radius: var(--radius-xs); background: var(--surface); box-shadow: 0 0 0 1px var(--border); color: var(--text-soft); }
+.w-shell .composer-menu { left: 16px; right: 16px; bottom: calc(100% - 6px); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); box-shadow: 0 8px 24px rgb(0 0 0 / 0.12), 0 1px 3px rgb(0 0 0 / 0.06); }
+.w-shell .composer-menu-glide { border-radius: var(--radius-xs); background: var(--hover); }
+.w-shell .composer-menu button { border-radius: var(--radius-xs); color: var(--text); }
+.w-shell .composer-menu-icon { color: var(--text-soft); }
+.w-shell .composer-shot { border-color: var(--border); border-radius: var(--radius-md); background: var(--quote); }
+.w-shell .composer-shot-actions button { padding: 5px 9px; font-size: 12px; }
+.w-shell .composer-shot-actions button:not(.ghost) { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+/* Touch screens: 16px text so the box doesn't zoom the page (the reference did this at ≤ 768px). */
+@media (hover: none) and (pointer: coarse) { .w-shell .composer.pill textarea { font-size: 16px; } }
+@media (prefers-reduced-motion: reduce) { .w-shell *, .w-shell *::before, .w-shell *::after { animation: none !important; transition: none !important; } }
+
+/* ---------- W-04 "bar" launcher (D-32) ----------
+   The widget as an "Ask anything…" bar, after the Fin messenger on fin.ai: sizes, colours, glass
+   layers and timings are the ones measured from it. html.bar is a transparent frame the loader
+   sizes and clips from what useBarFrame reports (web/widget/bar.tsx). One look: a white bar, the
+   chat on dark glass; the brand colour is the send button's. */
+:root.bar, :root.bar[data-theme] { color-scheme: light; }
+html.bar, html.bar body, html.bar #root { background: transparent; }
+html.bar body {
+  overflow: hidden;
+  color: #000;
+  font: 16px/16px system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+.b-root { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; overflow: visible; }
+
+/* The chat panel */
+.b-main { display: flex; flex-direction: column; flex: 1 1 0%; min-height: 0; overflow: hidden; position: relative; z-index: 1; margin-bottom: -17px; }
+.b-glass { position: absolute; inset: 12px 16px 16px; border-radius: 24px; background-color: rgba(26, 26, 26, 0.55); backdrop-filter: blur(50px); box-shadow: rgba(0, 0, 0, 0.15) 0px 1px 3px 0px, rgba(0, 0, 0, 0.2) 0px 4px 12px 0px; overflow: hidden; pointer-events: none; transition: background-color 0.3s ease-out; }
+@supports not (backdrop-filter: blur(50px)) { .b-glass { background-color: rgba(42, 42, 42, 0.85); } }
+.b-glass > * { position: absolute; inset: 0; }
+.b-glass-border { border-radius: 24px; border: 1px solid rgba(0, 0, 0, 0.05); }
+.b-glass-noise { opacity: 0.1; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+.b-glass-sheen { background-image: linear-gradient(rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0) 100%); }
+.b-panel { display: flex; flex-direction: column; flex: 1 1 0%; overflow: hidden; position: relative; }
+
+.b-head { position: absolute; top: 0; left: 0; right: 0; z-index: 20; height: 56px; margin-top: 12px; padding: 0 16px; color: rgb(250, 250, 250); display: flex; align-items: center; }
+.b-head-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; }
+.b-title { display: flex; align-items: center; gap: 8px; flex: 0 1 auto; min-width: 0; padding-left: 14px; }
+.b-avatar { display: flex; align-items: center; justify-content: center; overflow: clip; flex-shrink: 0; width: 24px; height: 24px; border-radius: 8px; background: transparent; }
+.b-avatar img { width: 100%; height: 24px; object-fit: cover; }
+.b-title h1 { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgb(250, 250, 250); }
+.b-head-actions { display: flex; align-items: center; gap: 8px; margin-right: 12px; }
+.b-close { min-width: 32px; min-height: 32px; padding: 8px; border-radius: 100px; display: inline-flex; align-items: center; justify-content: center; border: none; background: transparent; color: rgb(250, 250, 250); transition: background 0.15s, color 0.15s; }
+.b-close:hover { background: rgba(255, 255, 255, 0.1); color: rgb(250, 250, 250); }
+.b-close:focus-visible { outline: rgb(250, 250, 250) solid 2px; outline-offset: 2px; }
+
+.b-tab { display: flex; flex-direction: column; flex: 1 1 0%; overflow: hidden; position: relative; margin-top: 12px; border-radius: 0 0 24px 24px; clip-path: inset(0px round 0px 0px 24px 24px); }
+.b-log { display: flex; flex-direction: column; flex: 1 1 0%; overflow: hidden auto; outline-offset: -5px; overscroll-behavior: contain; margin-bottom: 15px; margin-right: 16px; border-radius: 0 0 24px 24px; padding-top: 56px; mask-image: linear-gradient(transparent 0px, transparent 40px, black 64px, black 100%); color: rgb(250, 250, 250); font-size: 14px; line-height: 1.4; }
+.b-log .muted { color: rgba(255, 255, 255, 0.7); }
+.b-log a { color: rgb(250, 250, 250); text-decoration: underline; }
+.b-log .error { color: #ff9b91; }
+.b-pad { padding: 0 16px 12px 32px; margin: 0; }
+
+/* Messages: the assistant's and the team's as plain text, the visitor's in a tinted bubble. */
+.b-log .messages { flex: none; overflow: visible; padding: 8px 16px 12px 32px; display: block; gap: 0; }
+.b-log .msg { display: flow-root; max-width: 100%; padding-bottom: 16px; }
+.b-log .msg:nth-last-child(1 of .msg) { padding-bottom: 24px; }
+.b-log .messages-jump button { border-color: rgba(255, 255, 255, 0.18); background: rgba(40, 40, 44, 0.85); color: rgb(250, 250, 250); }
+.b-log .msg .author, .b-log .seen, .b-log .msg .meta { display: none; }
+.b-log .bubble { padding: 0; border: 0; border-radius: 16px; background: transparent; color: rgb(250, 250, 250); font-size: 14px; line-height: 1.4; }
+.b-log .msg.ai .bubble { background: transparent; color: rgb(250, 250, 250); }
+.b-log .msg.own .bubble { float: right; text-align: left; padding: 12px 16px; max-width: 464px; background-color: rgba(9, 14, 21, 0.2); color: rgb(250, 250, 250); }
+.b-log .msg.own { animation: b-part 200ms both; }
+@keyframes b-part { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+.b-log .msg.own > :not(.bubble) { clear: both; text-align: right; }
+.b-log .bubble.typing { padding: 0 14px; min-width: 56px; height: 32px; border-radius: 16px; background: rgba(255, 255, 255, 0.1); display: inline-flex; justify-content: center; align-items: center; gap: 4px; }
+.b-log .typing { color: rgb(250, 250, 250); }
+.b-log .bubble code, .b-log .cite { background-color: rgba(255, 255, 255, 0.1); color: rgb(250, 250, 250); }
+.b-log .sources, .b-log .sources a { color: rgba(255, 255, 255, 0.7); }
+.b-log .attachments img { border: 0; border-radius: 16px; }
+.b-log .attachments .file { border: 0; background: rgba(9, 14, 21, 0.2); color: rgb(250, 250, 250); border-radius: 16px; }
+.b-log .system-msg { display: block; text-align: center; color: rgba(255, 255, 255, 0.7); font-size: 12px; padding: 0 0 16px; }
+.b-log .w-opener { margin: 8px 16px 0 32px; }
+.b-log .w-human { background: none; border: 0; padding: 0 16px 12px 32px; text-align: left; }
+.b-log .w-human button.link { color: rgba(255, 255, 255, 0.7); font-size: 12px; text-decoration: underline; }
+.b-log .w-csat, .b-log .w-email { margin: 0 16px 12px 32px; padding: 12px 16px; border: 0; border-radius: 16px; background: rgba(9, 14, 21, 0.2); color: rgb(250, 250, 250); }
+.b-log .w-csat button.ghost, .b-log .w-email button.ghost { color: rgb(250, 250, 250); border-color: rgba(255, 255, 255, 0.2); }
+.b-log input, .b-log textarea { background: #fff; color: rgb(20, 22, 26); border: 0; border-radius: 12px; }
+
+/* The bar */
+.b-bottom { padding-bottom: 16px; flex-shrink: 0; position: relative; z-index: 2; isolation: isolate; }
+.b-sizer { margin: 0 14px; max-width: calc(100% - 16px); }
+.b-notice { min-height: 14px; margin-top: -12px; }
+.b-error { margin: 0 10px 8px; padding: 8px 16px; border-radius: 20px; background: rgba(42, 42, 42, 0.5); backdrop-filter: blur(100px); color: #fff; font-size: 14px; line-height: 21px; }
+
+.b-chips { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 0 10px 12px; }
+.b-chip { padding: 8px 16px; border: none; border-radius: 20px; color: rgb(255, 255, 255); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-weight: 500; cursor: pointer; user-select: none; box-sizing: border-box; opacity: 0; animation: 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) 400ms 1 normal both running b-rise; height: auto; max-width: 100%; white-space: normal; overflow-wrap: break-word; background: rgba(42, 42, 42, 0.5); backdrop-filter: blur(100px); outline: transparent solid 1px; box-shadow: rgba(9, 14, 21, 0.2) 0px 1px 2px; font-size: 14px; line-height: 21px; text-align: left; transition: background-color 0.1s; }
+.b-chip:hover { background: rgba(42, 42, 42, 0.6); }
+.b-chip:active { transform: scale(0.98); }
+.b-chip:focus { outline: none; }
+.b-chip:focus-visible { outline: none; box-shadow: rgb(255, 255, 255) 0px 0px 0px 2px, rgba(0, 0, 0, 0.7) 0px 0px 0px 4px; opacity: 1 !important; }
+@supports not (backdrop-filter: blur(80px)) { .b-chip { background: rgba(0, 0, 0, 0.8); } }
+@keyframes b-rise { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0px); } }
+
+.b-pill { position: relative; margin: 10px; border-radius: 24px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); box-shadow: rgba(0, 0, 0, 0.05) 0px -1px 0px 0px, rgba(9, 14, 21, 0.2) 0px 1px 3px 0px, rgba(0, 0, 0, 0.24) 0px 6px 14px 0px; min-height: 45px; transition: background 0.5s ease-out, box-shadow 0.3s ease-out; overflow: hidden; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+.b-pill:hover, .b-pill:focus-within, .b-pill.open { background: rgb(255, 255, 255); box-shadow: rgba(0, 0, 0, 0.06) 0px -1px 0px 0px, rgba(9, 14, 21, 0.22) 0px 2px 6px 0px, rgba(0, 0, 0, 0.28) 0px 8px 18px 0px; }
+.b-pill.open { cursor: auto; }
+.b-pill::before { content: ""; position: absolute; inset: 0px; border-radius: inherit; pointer-events: none; z-index: 0; opacity: 0.15; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+.b-pill > * { position: relative; z-index: 1; }
+.b-pill .composer { border: 0; background: transparent; padding: 0; }
+.b-pill .composer-box { padding: 8px; min-height: 48px; justify-content: center; }
+.b-pill textarea { min-height: 32px; margin: 0; padding: 6px 8px; border: 0; border-radius: 0; outline: none; background: transparent; color: rgb(20, 22, 26); font: 14px/20px system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; max-height: 154px; }
+.b-pill textarea:focus { outline: none; }
+.b-pill textarea::placeholder { color: rgb(108, 111, 116); opacity: 1; }
+.b-pill:not(.open) textarea { opacity: 0; }
+.b-hint { position: absolute; top: 13px; left: 16px; right: 60px; height: 20px; overflow: hidden; pointer-events: none; user-select: none; white-space: nowrap; font-size: 14px; line-height: 150%; color: rgb(108, 111, 116); mask-image: linear-gradient(to right, black 85%, transparent 100%); }
+.b-hint-text { line-height: 20px; animation: b-fade 300ms ease-out; }
+@keyframes b-fade { from { opacity: 0; } to { opacity: 1; } }
+/* Closed, the bar is the hint and Send; "+" fades in when it opens. */
+.b-pill:not(.open) .composer-plus { visibility: hidden; }
+.b-pill.open .composer-plus { animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both b-fade; }
+.b-pill .composer-plus { width: 32px; height: 32px; border-radius: 16px; background: transparent; color: rgb(20, 22, 26); }
+.b-pill .composer-plus:hover:not(:disabled), .b-pill .composer-plus.active { background-color: rgba(9, 14, 21, 0.1); }
+.b-pill .composer-send { height: 32px; width: 32px; border-radius: 16px; background: var(--accent); color: var(--accent-text); }
+.b-pill .composer-send:hover:not(:disabled) { opacity: 0.9; }
+.b-pill .composer-send:focus { box-shadow: rgba(0, 0, 0, 0.3) 0px 0px 1px 2px; }
+.b-pill .composer-send:focus:not(:focus-visible) { box-shadow: none; }
+.b-pill .composer-send:disabled { opacity: 1; cursor: default; background-color: rgba(9, 14, 21, 0.1); color: rgb(108, 111, 116); }
+.b-pill .composer-file { border-radius: 13px; background: rgba(9, 14, 21, 0.06); color: rgb(20, 22, 26); }
+.b-pill .composer-files { padding: 2px 4px 0; }
+/* The pill clips its children, so the menu sits in it, over the box. */
+.b-pill .composer-menu { position: relative; margin: 8px 8px 0; color: rgb(20, 22, 26); }
+.b-pill .composer-menu-glide { border-radius: 12px; background: rgba(9, 14, 21, 0.06); }
+.b-pill .composer-menu button { border-radius: 12px; color: inherit; }
+.b-pill .composer-shot { margin: 10px 10px 0; }
+@media (prefers-reduced-motion: reduce) { .b-chip, .b-log .msg.own, .b-hint-text, .b-pill .composer-plus { animation: none; opacity: 1; } }
+
+/* ---------- W-04 "island" launcher (D-39) ----------
+   One control at the bottom centre that changes shape with each moment (web/widget/island.tsx): a
+   resting pill, the question box, a status line while the assistant works, the latest answer, the
+   whole conversation, or a one-line offer of help. The open shapes keep the pill as their bottom
+   row (.i-row) and grow above it; no header bar (.i-ctl in the corner, .i-top only when needed).
+   Its palette is its own near-black one (html.island-dark, the default) or the theme's
+   (islandSurface "page"); the brand colour on the send button, the corner rounding on its open
+   shapes, Outfit. html.island is a transparent frame the loader sizes and clips from what
+   useIslandFrame reports; the morph happens in here, with the frame's clip following it. The
+   page keeps a light colour scheme whatever the theme (a frame whose scheme differs from the host
+   page's gets an opaque backdrop); the palette still comes from data-theme. */
+:root.island, :root.island[data-theme] { color-scheme: light; }
+html.island, html.island body, html.island #root { background: transparent; }
+html.island body { overflow: hidden; color: var(--text); font: 14px/1.5 "Jun Desk Outfit", Arial, sans-serif; }
+/* The near-black surface (islandSurface "dark", the default), like Apple's Dynamic Island, whatever
+   the page or theme: the island's own palette, so every part (status shimmer, chips, box, sources,
+   steps, action cards, CSAT and email asks, typing dots) reads on black. With "page" none of this
+   applies and the theme's tokens are used as before. Beats :root[data-theme] and the dark media query. */
+html.island.island-dark {
+  --bg: #18181a;
+  --surface: #0c0c0d;
+  --field: #1a1a1c;
+  --hover: #1d1d20;
+  --quote: #151517;
+  --text: #f5f5f7;
+  --text-soft: #d6d6da;
+  --muted: #98989f;
+  --border: #2c2c30;
+  --border-soft: #222225;
+  --bubble: #222225;
+  --bubble-text: #ffffff;
+  --code: #1f1f22;
+  --pre: #141416;
+  --link: #c9b2e2;
+  --error: #ff8a7e;
+  --tag: #1b1e2a;
+  --focus: #b9a3d0;
+}
+.island-dark .i-shell { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 28px rgba(0, 0, 0, 0.32); }
+/* A hairline highlight on the edge (under the neon ring when that's on). */
+.island-dark .i-shell::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); pointer-events: none; }
+.island-dark .i-rest:hover { background: #161618; }
+.island-dark .i-body::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.14); }
+.island-dark .i-body:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.26); }
+.island-dark .i-view .composer-menu { box-shadow: 0 8px 24px rgb(0 0 0 / 0.5); }
+.i-root { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 24px; overflow: visible; }
+@media (max-width: 639px) { .i-root { padding-bottom: 12px; } }
+/* The box springs to the measured size (the proposal's stiffness 380 / damping 30, about 0.65s with a
+   slight overshoot). The shell fills it; the neon ring and its glow sit on the box, outside the shell's
+   clip, and stay inside the 32px the frame keeps visible around the island. */
+.i-box { position: relative; border-radius: 28px; transition: width 0.65s cubic-bezier(0.34, 1.25, 0.5, 1), height 0.65s cubic-bezier(0.34, 1.25, 0.5, 1), border-radius 0.65s cubic-bezier(0.34, 1.25, 0.5, 1), transform 0.35s cubic-bezier(0.34, 1.6, 0.5, 1); }
+/* Pressing the resting pill squishes it a little; it springs back on release. */
+.i-box:has(.i-rest:active) { transform: scale(0.97); transition-duration: 0.65s, 0.65s, 0.65s, 0.12s; }
+/* While an answer streams in, the box grows with it without bouncing. */
+.i-box.i-live { transition-duration: 0.25s; transition-timing-function: ease-out; }
+.i-s-open, .i-s-answer, .i-s-panel { border-radius: var(--radius); }
+.i-shell { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 6px 20px rgba(0, 0, 0, 0.1); }
+/* Neon border: a conic gradient turning slowly, drawn as a 1.5px ring on the box's own edge (masked, so its corners match the shell's) with a blurred copy behind for the glow. */
+@property --i-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.i-ring, .i-glow { --i-neon: conic-gradient(from var(--i-angle), #ff5ec8, #8b5cff, #35c8ff, #3dffa8, #ffd54a, #ff7a5c, #ff5ec8); position: absolute; border-radius: inherit; background: var(--i-neon); animation: i-turn 6s linear infinite; pointer-events: none; }
+.i-ring { inset: 0; padding: 1.5px; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; z-index: 1; }
+.i-glow { inset: -2px; filter: blur(14px); opacity: 0.55; }
+@keyframes i-turn { to { --i-angle: 360deg; } }
+/* Content sits on the bottom edge (the box stays put while the shell grows) and rises out of the
+   pill's row from a blur after the old content has gone, so the island reads as one thing growing. */
+.i-view { position: absolute; left: 0; bottom: 0; animation: i-in 0.34s 0.12s both; }
+@keyframes i-in { from { opacity: 0; filter: blur(6px); transform: translateY(6px); } to { opacity: 1; filter: none; transform: none; } }
+/* The mark (the chat header's logo at 22px), breathing while the assistant works. */
+.i-mark { width: 22px; height: 22px; flex: none; border-radius: var(--radius-xs); object-fit: contain; }
+.i-mark.pulse { animation: i-pulse 1.6s ease-in-out infinite; }
+@keyframes i-pulse { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1); } }
+/* A reset at element weight (:where), so the island's own button classes (.i-ask, .i-ghost) win over it. */
+:where(.i-root) button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.i-root :is(button, a, textarea, input):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Resting: the light, the hint typing out the suggested questions (or a new reply), and the "/" key. */
+.i-rest { display: flex; align-items: center; gap: 12px; width: 100%; height: 54px; padding: 0 16px 0 16px; border: 0; background: transparent; color: var(--text); font-size: 14px; text-align: left; transition: background 0.15s; }
+.i-rest:hover { background: var(--hover); }
+.i-rest:focus-visible { outline-offset: -4px; border-radius: 28px; }
+.i-rest .b-hint { position: static; flex: 1; min-width: 0; height: 20px; color: var(--muted); }
+.i-rest-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Folded with a chat: its last answer in a few words. */
+.i-rest-sum { color: var(--text-soft); animation: b-fade 300ms ease-out; }
+.i-kbd { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--muted); font: 12px/1 "Jun Desk Mono", ui-monospace, monospace; }
+@media (hover: none) { .i-kbd { display: none; } }
+.i-up { display: grid; place-items: center; width: 22px; height: 22px; flex: none; color: var(--muted); }
+.i-up svg { width: 16px; height: 16px; }
+
+/* Nudge: a one-line offer with Ask; × or 8 s puts it to rest. */
+.i-nudge { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 9px 9px 9px 16px; }
+.i-nudge-text { flex: 1; min-width: 0; color: var(--text-soft); font-size: 13.5px; line-height: 1.45; }
+.i-nudge-from { color: var(--muted); }
+.i-ask { height: 32px; padding: 0 14px; border: 0; border-radius: 16px; background: var(--accent); color: var(--accent-text); font-size: 13px; font-weight: 600; }
+.i-ask:hover { background: var(--accent-hover); }
+.i-ghost { display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 10px; border: 0; border-radius: 14px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 500; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+.i-ghost:hover { background: var(--hover); color: var(--text); }
+.i-x { width: 28px; padding: 0; font-size: 20px; font-weight: 300; line-height: 1; }
+.i-icon { width: 28px; padding: 0; }
+.i-icon svg { width: 15px; height: 15px; }
+
+/* Thinking: one specific line (a running tool step's label, else "Thinking…"). */
+.i-status { display: flex; align-items: center; gap: 12px; height: 54px; padding: 0 20px 0 16px; }
+.i-status-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; background: linear-gradient(90deg, var(--muted) 35%, var(--text) 50%, var(--muted) 65%) 0 0 / 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: w-shimmer 1.6s linear infinite; }
+
+/* Open: the suggested questions over the pill's row. */
+.i-open { display: flex; flex-direction: column; }
+.i-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 14px 2px; }
+.i-chip { max-width: 100%; padding: 6px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 12.5px; line-height: 1.5; text-align: left; animation: b-rise 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both; transition: background 0.15s; }
+.i-chip:hover { background: var(--hover); }
+.i-error { margin: 0; padding: 6px 12px 8px; color: var(--error); font-size: 13px; }
+
+/* No header bar. The top row only when it has something (who's talking, Earlier/Latest, an intent's
+   exit: D-37, always visible); it leaves the top-right corner to the controls. */
+.i-top { display: flex; align-items: center; gap: 8px; flex: none; min-height: 28px; padding: 12px 76px 0 20px; }
+.i-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; font-weight: 500; }
+.i-spacer { flex: 1; }
+.i-exit { height: 26px; padding: 0 11px; border: 1px solid var(--border); border-radius: 13px; background: var(--bg); color: var(--text); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.i-exit:hover { background: var(--hover); }
+/* Small quiet chips: Earlier / Latest, Talk to a person. */
+.i-pill-chip { height: 24px; padding: 0 10px; border: 1px solid var(--border-soft); border-radius: 12px; background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 500; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+.i-pill-chip:hover { background: var(--hover); color: var(--text); }
+.i-foot { display: flex; flex: none; padding: 2px 16px 0; }
+/* Minimize and End: small, over the top-right corner, on hover or when tabbed to; quiet but always there on touch screens. */
+/* Inset from the rounded corner, centred on the first line (the title or the top row's chips). */
+.i-ctl { position: absolute; top: 12px; right: 14px; z-index: 3; display: flex; gap: 4px; opacity: 0; transition: opacity 0.18s; }
+.i-box:hover .i-ctl, .i-ctl:focus-within { opacity: 1; }
+@media (hover: none) { .i-ctl { opacity: 0.6; } }
+/* An opaque backing, so content scrolling under the corner never shows through the buttons. */
+.i-ctl { padding: 2px; border-radius: 16px; background: var(--surface); }
+.i-ctl .i-ghost { width: 28px; height: 28px; border-radius: 14px; background: var(--hover); }
+.i-ctl .i-ghost:hover { background: var(--border); }
+.i-ctl svg { width: 14px; height: 14px; }
+
+/* The pill's row: the mark and the question box, 54px like the resting pill. "+" and Send stay out
+   of the way until the visitor types (or points at the row, or tabs to "+"). */
+.i-row { display: flex; align-items: flex-end; gap: 10px; flex: none; min-height: 54px; padding: 0 10px 0 16px; }
+.i-row > .i-mark { margin-bottom: 16px; }
+.i-row > .w-composer-wrap { flex: 1; min-width: 0; }
+
+/* Answer (the latest exchange) and panel (the whole conversation): the chat window's thread styles. */
+.i-answer, .i-panel { display: flex; flex-direction: column; }
+.i-panel { height: 100%; }
+.i-body { position: relative; overflow-y: auto; overscroll-behavior: contain; color: var(--text); font-size: 14px; line-height: 1.5; }
+/* An answer is as tall as it needs, up to the panel's height (the view's max-height, set by Island):
+   only taller ones scroll, from their start, with a fade at the bottom while there's more. */
+.i-answer { max-height: inherit; }
+.i-answer > :not(.i-body) { flex: none; }
+.i-answer .i-body { flex: 0 1 auto; min-height: 0; }
+.i-answer .i-body.i-more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent); }
+.i-panel .i-body { flex: 1; min-height: 0; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 20px); mask-image: linear-gradient(to bottom, transparent, #000 20px); }
+.i-body::-webkit-scrollbar { width: 10px; }
+.i-body::-webkit-scrollbar-track { background: transparent; }
+.i-body::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+.i-body::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 10px; background: color-mix(in srgb, var(--muted) 30%, transparent) padding-box; }
+.i-body:hover::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--muted) 55%, transparent); }
+@supports not selector(::-webkit-scrollbar) { .i-body { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted) 40%, transparent) transparent; } }
+.i-body .messages { flex: none; display: block; overflow: visible; gap: 0; padding: 2px 20px 6px; }
+.i-body .msg { display: flow-root; max-width: 100%; padding-bottom: 12px; font-size: 14px; line-height: 1.6; }
+.i-body .msg .author, .i-body .seen, .i-body .msg .meta { display: none; }
+.i-body .bubble { padding: 0; border: 0; border-radius: var(--radius-md); background: none; color: var(--text-soft); overflow-wrap: anywhere; white-space: pre-wrap; }
+.i-body .msg.ai .bubble { background: none; color: var(--text-soft); }
+.i-body .msg.own .bubble { float: right; max-width: 85%; padding: 8px 12px; background: var(--bubble); color: var(--bubble-text); }
+.i-body .msg.own > :not(.bubble) { clear: both; text-align: right; }
+/* Without a header the body starts at the island's top edge (a top row brings its own space). */
+.i-answer > .i-body, .i-panel > .i-body { padding-top: 14px; }
+.i-top + .i-body { padding-top: 8px; }
+/* In the answer state the question is the answer's title: bold, at the top, left-aligned (clear of the corner controls). */
+.i-answer .i-body .msg.own { margin-left: 0; padding-right: 72px; align-self: flex-start; justify-items: start; text-align: left; }
+.i-answer .i-top + .i-body .msg.own { padding-right: 0; }
+.i-answer .i-body .msg.own .bubble { float: none; max-width: 100%; padding: 0 0 4px; background: none; color: var(--text); font-size: 15.5px; font-weight: 600; line-height: 1.4; letter-spacing: -0.005em; }
+.i-answer .i-body .msg.own.pending .bubble { opacity: 0.7; }
+.i-answer .i-body .msg.own > :not(.bubble) { text-align: left; }
+/* The panel (a teammate's chat, or Earlier): calm, in the island's style, not a chat window. The
+   visitor's own words small, muted and to the right without a bubble; the team's as plain text
+   with the teammate's name once per run (MessageList's author line, which carries the time too);
+   system notices small and centred. */
+.i-panel .i-body .msg.own .bubble { max-width: 80%; padding: 0; background: none; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.i-panel .i-body .msg.own { padding-bottom: 10px; }
+.i-panel .i-body .msg.other:not(.ai) > .author { display: block; margin: 0 0 2px; color: var(--muted); font-size: 11.5px; font-weight: 500; line-height: 1.4; }
+.i-panel .i-body .msg.other:not(.ai) .bubble { color: var(--text); }
+/* A new speaker gets a little more room above. */
+.i-panel .i-body .msg.own + .msg.other, .i-panel .i-body .msg.other + .msg.own { margin-top: 4px; }
+/* The island's answer: a card is the answer (bare, full width), its words a caption under it, more cards as peeks. */
+.i-body .w-card-open { animation: i-card 0.28s cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes i-card { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.i-body .w-answer .bubble.w-caption { margin-top: 6px; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.i-body .w-peeks { display: flex; flex-direction: column; gap: 2px; margin: 8px -10px 0; }
+@media (prefers-reduced-motion: reduce) { .i-body .w-card-open { animation: none; } }
+.i-body .bubble.typing { display: flex; align-items: center; gap: 3px; min-height: 22px; padding: 0; }
+.i-body .typing { color: var(--focus); }
+.i-body .bubble code { font-family: "Jun Desk Mono", monospace; font-size: 0.88em; background: var(--code); border-radius: 4px; padding: 0.15em 0.35em; }
+.i-body .bubble a, .i-body .sources a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+.i-body .cite { padding: 0 3px; border-radius: 4px; background: var(--code); color: var(--link); text-decoration: none; }
+.i-body .sources { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.i-body .attachments img { border-color: var(--border); border-radius: var(--radius-md); }
+.i-body .attachments .file { border-color: var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: 13px; }
+.i-body .system-msg { display: block; padding: 0 0 12px; color: var(--muted); font-size: 12px; text-align: center; }
+.i-body .w-opener { margin: 4px 20px 0; }
+.i-body .w-reply { padding: 5px 9px; border: 1px solid var(--border); border-radius: var(--radius-xs); background: var(--bg); color: inherit; font-size: 11.5px; line-height: 1.5; }
+.i-body .w-human { padding: 0 20px 10px; border: 0; background: none; text-align: left; }
+.i-body .w-human button.link { color: var(--muted); font-size: 12px; text-decoration: underline; }
+.i-body .w-csat, .i-body .w-email { gap: 8px; margin: 0 20px 10px; padding: 8px 10px; border: 1px solid var(--border-soft); border-radius: var(--radius-md); background: var(--quote); color: var(--text-soft); font-size: 12px; }
+.i-body .w-email input, .i-body .w-csat textarea { padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--field); color: var(--text); font-size: 13px; outline: none; }
+.i-body .w-email button:not(.w-x, .ghost), .i-body .w-csat button:not(.w-x, .w-thumb, .ghost) { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.i-body .messages.w-skel { display: flex; padding: 8px 20px; }
+
+/* The box, in the pill's row: no field of its own (the island is the field), with "+", the input and Send. */
+.i-view .composer.pill { flex: none; padding: 0; border: 0; background: transparent; }
+.i-view .composer-box { min-height: 54px; padding: 12px 0; border-radius: 0; background: transparent; justify-content: center; }
+/* "+" and Send fold away while the box is empty; "+" comes back on hover, when tabbed to or open (and when focused on touch). */
+.i-row .composer.pill .composer-plus, .i-row .composer.pill .composer-send { overflow: hidden; transition: width 0.2s ease-out, opacity 0.2s ease-out, background-color 150ms, color 150ms, transform 150ms; }
+.i-view .i-row .composer.pill .composer-send:disabled { width: 0; opacity: 0; pointer-events: none; }
+.i-row:not(:hover) .composer:not(:has(textarea:not(:placeholder-shown), .composer-files, .composer-plus:focus-visible, .composer-plus.active)) .composer-plus { width: 0; opacity: 0; }
+@media (hover: none) { .i-row:focus-within .composer.pill .composer-plus { width: 30px !important; opacity: 1 !important; } }
+.i-view .composer.pill textarea { min-height: 30px; max-height: 120px; margin: 0; padding: 5px 4px; border: 0; border-radius: 0; background: transparent; color: var(--text); font-size: 14px; line-height: 20px; outline: none; }
+.i-view .composer.pill textarea::placeholder { color: var(--muted); }
+.i-view .composer-plus { width: 30px; height: 30px; border-radius: var(--radius-xs); background: transparent; color: var(--muted); }
+.i-view .composer-plus:hover:not(:disabled), .i-view .composer-plus.active { background: var(--border-soft); color: var(--text); }
+.i-view .composer-send { width: 30px; height: 30px; border-radius: var(--radius-xs); background: var(--accent); color: var(--accent-text); }
+.i-view .composer-send:hover:not(:disabled) { background: var(--accent-hover); }
+.i-view .composer.pill .composer-send:disabled { opacity: 1; background: var(--border); color: var(--muted); }
+.i-view .composer-file { border-radius: var(--radius-xs); background: var(--surface); box-shadow: 0 0 0 1px var(--border); color: var(--text-soft); }
+.i-view .composer-menu { position: relative; margin: 0 0 6px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); box-shadow: 0 8px 24px rgb(0 0 0 / 0.12), 0 1px 3px rgb(0 0 0 / 0.06); }
+.i-view .composer-menu-glide { border-radius: var(--radius-xs); background: var(--hover); }
+.i-view .composer-menu button { border-radius: var(--radius-xs); color: var(--text); }
+.i-view .composer-menu-icon { color: var(--text-soft); }
+.i-view .composer-shot { margin: 0 0 8px; border-color: var(--border); border-radius: var(--radius-md); background: var(--quote); }
+.i-view .composer-shot-actions button { padding: 5px 9px; font-size: 12px; }
+.i-view .composer-shot-actions button:not(.ghost) { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+@media (hover: none) and (pointer: coarse) { .i-view .composer.pill textarea { font-size: 16px; } }
+/* Touch screens: the corner controls are always shown (.i-ctl, 64px wide at 14px from the edge), so
+   the answer's title and the top row keep clear of them instead of running under their backing. */
+@media (hover: none) {
+  .i-answer .i-body .msg.own { padding-right: 62px; }
+  .i-top { padding-right: 84px; }
+}
+/* Phones (the island is the viewport minus 24px): a little less side padding, so cards, peeks and
+   chips get the width; list rows still have their 10px to pull out into. */
+@media (max-width: 639px) {
+  .i-body .messages { padding-left: 16px; padding-right: 16px; }
+  .i-top { padding-left: 16px; }
+  .i-body .w-opener { margin-left: 16px; margin-right: 16px; }
+  .i-body .w-csat, .i-body .w-email { margin-left: 16px; margin-right: 16px; }
+  .i-chips { padding: 12px 12px 2px; }
+  .i-chip { white-space: normal; overflow-wrap: anywhere; }
+  .i-foot { padding-left: 12px; }
+  .i-row { padding-left: 14px; }
+  .i-ctl { right: 10px; }
+}
+/* Reduce motion: no spring, bounce, blur or shimmer; states cross-fade. */
+@media (prefers-reduced-motion: reduce) {
+  .i-box { transition: none; }
+  .i-box:has(.i-rest:active) { transform: none; }
+  .i-view { animation: i-fade 0.15s both; }
+  .i-ctl, .i-row .composer.pill .composer-plus, .i-row .composer.pill .composer-send { transition: none; }
+  .i-chip, .i-mark.pulse, .i-ring, .i-glow { animation: none; }
+  .i-status-text { animation: none; background: none; color: var(--muted); }
+}
+@keyframes i-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- AI answers (web/widget/answer.tsx) ----------
+   Words resolve out of a blur as they stream; [n] citations are inline source chips (favicon +
+   domain); then copy, the cited sources (an avatar stack that opens the list) and follow-ups. */
+.w-answer { --a-ink: var(--text); --a-ink-2: var(--text-soft); --a-ink-3: var(--muted); --a-inset: var(--code); --a-hover: var(--hover); --a-line: var(--border-soft); --a-canvas: var(--surface); }
+.b-log .w-answer { --a-ink: rgb(250, 250, 250); --a-ink-2: rgba(255, 255, 255, 0.78); --a-ink-3: rgba(255, 255, 255, 0.55); --a-inset: rgba(255, 255, 255, 0.08); --a-hover: rgba(255, 255, 255, 0.1); --a-line: rgba(255, 255, 255, 0.12); --a-canvas: rgb(52, 52, 52); }
+/* Text lines up with the bubble's 4px inset in the window; streaming text is full strength. */
+.w-shell .w-answer > :not(.bubble) { margin-left: 4px; margin-right: 4px; }
+.w-shell .msg.ai.streaming .bubble, .b-log .msg.ai.streaming .bubble { opacity: 1; }
+.w-answer .w-anim { animation: w-resolve 360ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes w-resolve { from { opacity: 0; filter: blur(4px); } to { opacity: 1; filter: blur(0); } }
+.w-answer .w-caret { display: inline-block; width: 2px; height: 0.95em; margin-left: 2px; border-radius: 1px; background: var(--a-ink); vertical-align: -0.12em; animation: w-fade 150ms ease-out both; }
+@keyframes w-fade { from { opacity: 0; } to { opacity: 1; } }
+/* The answer's Markdown (web/components/Markdown.tsx, shared/markdown.ts): blocks, not pre-wrap
+   lines. Lists draw their own markers, so indents and spacing match on every surface. */
+.w-answer .bubble.md { white-space: normal; }
+.w-answer .md > * { margin: 0; }
+.w-answer .md > * + * { margin-top: 0.6em; }
+.w-answer .md strong, .w-answer .md .md-h { color: var(--a-ink); font-weight: 600; }
+.w-answer .md .md-list { padding: 0; list-style: none; }
+.w-answer .md .md-li { display: flex; gap: 0.45em; }
+.w-answer .md .md-li + .md-li { margin-top: 0.25em; }
+.w-answer .md .md-d1 { padding-left: 1.15em; }
+.w-answer .md .md-d2 { padding-left: 2.3em; }
+.w-answer .md .md-d3 { padding-left: 3.45em; }
+.w-answer .md .md-mark { flex: none; min-width: 0.8em; color: var(--a-ink-3); font-variant-numeric: tabular-nums; }
+.w-answer .md ol > .md-li > .md-mark { min-width: 1.2em; }
+.w-answer .md .md-li-body { flex: 1; min-width: 0; }
+.w-answer .md .md-quote { padding-left: 0.75em; box-shadow: inset 2px 0 0 var(--a-line); color: var(--a-ink-3); }
+.w-answer .md .md-pre { padding: 8px 10px; border-radius: 8px; background: var(--a-inset); color: var(--a-ink-2); font: 0.86em/1.5 "Jun Desk Mono", monospace; white-space: pre; overflow-x: auto; }
+.w-answer .md .md-pre code { padding: 0; background: none; font: inherit; }
+.w-answer .md .md-hr { height: 0; border: 0; border-top: 1px solid var(--a-line); }
+.w-answer .md a.md-a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+.b-log .w-answer .md a.md-a { color: inherit; }
+/* The island's caption under a card: tighter. */
+.w-answer .md.w-caption > * + * { margin-top: 0.35em; }
+.w-answer .md.w-caption .md-li + .md-li { margin-top: 0.1em; }
+
+/* Inline source chip */
+.w-answer .w-cite-wrap.w-anim { animation: w-pop 250ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes w-pop { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+.w-answer .w-cite-wrap { display: inline-block; }
+.w-answer .bubble .w-cite { display: inline-flex; align-items: center; gap: 4px; height: 18px; max-width: 160px; margin-right: 2px; padding: 0 4px 0 3px; border-radius: 5px; background: var(--a-inset); box-shadow: 0 0 0 1px var(--a-line); color: var(--a-ink-2); font: 10.5px/1 "Jun Desk Mono", monospace; text-decoration: none; vertical-align: 1px; white-space: nowrap; transition: background 150ms, color 150ms; }
+.w-answer .bubble .w-cite > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.w-answer .bubble a.w-cite:hover { background: var(--a-hover); color: var(--a-ink); }
+.w-answer .w-cite-icon { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; object-fit: cover; }
+.w-answer .w-src-letter { display: inline-grid; place-items: center; color: #fff; font: 600 8px/1 "Jun Desk Outfit", Arial, sans-serif; }
+
+/* Copy and the sources toggle */
+.w-answer .w-anim-in, .w-answer .w-follow { animation: w-fade 400ms ease-out both; }
+.w-answer .w-answer-row { display: flex; align-items: center; gap: 2px; margin: 8px 0 0; }
+.w-answer .w-answer-btn { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--a-ink-3); transition: background 100ms, color 100ms; }
+.w-answer .w-answer-btn:hover { background: var(--a-hover); color: var(--a-ink-2); }
+.w-answer .w-answer-btn svg { width: 15px; height: 15px; }
+.w-answer .w-src-toggle { display: flex; align-items: center; gap: 6px; margin-left: 6px; padding: 2px 4px; border: 0; border-radius: 6px; background: transparent; color: var(--a-ink-2); font-size: 12px; line-height: 1.5; transition: background 150ms; }
+.w-answer .w-src-toggle:hover { background: var(--a-hover); }
+.w-answer .w-src-stack { display: flex; }
+.w-answer .w-src-avatar { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; background: var(--a-canvas); box-shadow: 0 0 0 1.5px var(--a-canvas); }
+.w-answer .w-src-avatar + .w-src-avatar { margin-left: -4px; }
+.w-answer .w-src-avatar.w-src-letter { font-size: 7px; }
+
+/* The sources list, opened from the toggle */
+.w-answer .w-src-panel { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 300ms cubic-bezier(0.23, 1, 0.32, 1), opacity 300ms cubic-bezier(0.23, 1, 0.32, 1); }
+.w-answer .w-src-panel.open { grid-template-rows: 1fr; opacity: 1; }
+.w-answer .w-src-panel > div { overflow: hidden; }
+.w-answer .w-src-list { display: flex; flex-direction: column; margin-top: 6px; padding: 4px; border-radius: 10px; background: var(--a-inset); box-shadow: 0 0 0 1px var(--a-line); }
+.w-answer .w-src-row { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 6px; border-radius: 6px; color: var(--a-ink-2); font-size: 12px; line-height: 1.5; text-decoration: none; transition: background 150ms, color 150ms; }
+.w-answer a.w-src-row:hover { background: var(--a-hover); color: var(--a-ink); }
+.w-answer a.w-src-row:hover .w-src-name { text-decoration: underline; text-underline-offset: 2px; }
+.w-answer .w-src-icon { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; object-fit: cover; }
+.w-answer .w-src-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-answer .w-src-domain { margin-left: auto; padding-left: 8px; flex-shrink: 0; color: var(--a-ink-3); font: 10.5px/1.5 "Jun Desk Mono", monospace; }
+
+/* Follow-ups (the newest answer only; tapping one sends it) */
+.w-answer .w-follow { margin-top: 10px; }
+.w-answer .w-follow-head { margin: 0; color: var(--a-ink-2); font-size: 12px; font-weight: 500; }
+.w-answer .w-follow-item { display: flex; align-items: center; gap: 8px; width: calc(100% + 12px); margin: 2px -6px 0; padding: 6px; border: 0; border-bottom: 1px solid var(--a-line); border-radius: 7px; background: transparent; color: var(--a-ink); font-size: 12.5px; line-height: 1.4; text-align: left; animation: w-rise 350ms cubic-bezier(0.23, 1, 0.32, 1) both; transition: background 100ms; }
+.w-answer .w-follow-item:hover { background: var(--a-hover); }
+.w-answer .w-follow-item svg { width: 11px; height: 11px; flex-shrink: 0; color: var(--a-ink-3); stroke-width: 2; }
+@keyframes w-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .w-answer *, .w-answer .w-src-panel { animation: none !important; transition: none !important; } }
+/* AI tool steps (answer.tsx Steps): one row per tool call (state icon, short title, a chip), several
+   under an "N steps" header. While tools run rows are only added; nothing opens or folds by itself. */
+/* The answer is a grid item sized by its content: cap it so a long chip ellipsizes instead of widening the row. */
+.w-answer { max-width: 100%; min-width: 0; }
+.w-answer .w-steps { display: flex; flex-direction: column; max-width: 100%; min-width: 0; margin-bottom: 6px; }
+/* Space under the steps only when words follow them; and an action chain's turns (one AI message
+   each, often just a step row) read as one flow, not as separate replies. */
+.w-answer > .w-steps:last-child { margin-bottom: 0; }
+.w-shell .msg.ai:has(+ .msg.ai) { margin-bottom: 4px; }
+.b-log .msg.ai:has(+ .msg.ai), .i-body .msg.ai:has(+ .msg.ai) { padding-bottom: 4px; }
+.w-answer .w-steps-head { display: flex; align-items: center; gap: 6px; width: fit-content; margin: 0 -6px; padding: 3px 6px; border: 0; border-radius: 7px; background: transparent; color: var(--a-ink-2); font-size: 12.5px; line-height: 1.5; transition: background 100ms; }
+.w-answer .w-steps-head:hover { background: var(--a-hover); }
+.w-answer .w-steps-chev { width: 12px; height: 12px; transform: rotate(-90deg); transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1); }
+.w-answer .w-steps-head[aria-expanded="true"] .w-steps-chev { transform: none; }
+.w-answer .w-steps-count { font-variant-numeric: tabular-nums; }
+.w-answer .w-steps-panel { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 300ms cubic-bezier(0.23, 1, 0.32, 1), opacity 300ms cubic-bezier(0.23, 1, 0.32, 1); }
+.w-answer .w-steps-panel.open { grid-template-rows: 1fr; opacity: 1; }
+/* Negative margin + padding: the rows' hover pills get room inside this clip box, text stays put. */
+.w-answer .w-steps-panel > div { min-height: 0; overflow: hidden; margin: 0 -4px; padding: 4px 4px 2px; }
+.w-answer .w-rows { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.w-answer .w-row { min-width: 0; animation: w-rise 300ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.w-answer .w-row-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.w-answer .w-row-btn { display: flex; flex: 1 1 auto; align-items: center; gap: 8px; min-width: 0; height: 28px; margin: 0 -3px; padding: 0 3px; border: 0; border-radius: 7px; background: transparent; color: var(--a-ink); font: inherit; text-align: left; transition: background 100ms; }
+.w-answer .w-row-btn:not(:disabled):hover { background: var(--a-hover); }
+.w-answer .w-row-btn:disabled { cursor: default; opacity: 1; }
+/* The state icon; a chevron takes its place on hover (or while open) when there's more to show. */
+.w-answer .w-row-icon { position: relative; display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 16px; height: 16px; color: var(--a-ink-3); }
+.w-answer .w-row-icon > * { transition: opacity 100ms; }
+.w-answer .w-row-glyph { width: 13px; height: 13px; }
+.w-answer .w-row-chev { position: absolute; width: 12px; height: 12px; opacity: 0; transform: rotate(-90deg); transition: opacity 150ms, transform 150ms; }
+.w-answer .w-row-btn:not(:disabled):hover .w-row-chev, .w-answer .w-row.open .w-row-chev { opacity: 1; }
+.w-answer .w-row.open .w-row-chev { transform: none; }
+.w-answer .w-row-btn:not(:disabled):hover .w-row-icon > :not(.w-row-chev), .w-answer .w-row.open .w-row-icon > :not(.w-row-chev) { opacity: 0; }
+.w-answer .w-row-label { flex-shrink: 0; max-width: 62%; overflow: hidden; color: var(--a-ink); font-size: 12.5px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.w-answer .w-row-chip { flex: 0 1 auto; min-width: 0; height: 22px; padding: 0 7px; overflow: hidden; border-radius: 6px; background: var(--a-inset); box-shadow: inset 0 0 0 1px var(--a-line); color: var(--a-ink-2); font-size: 11.5px; line-height: 22px; text-overflow: ellipsis; white-space: nowrap; }
+.w-answer .w-row-detail { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 300ms cubic-bezier(0.23, 1, 0.32, 1), opacity 300ms cubic-bezier(0.23, 1, 0.32, 1); }
+.w-answer .w-row-detail.open { grid-template-rows: 1fr; opacity: 1; }
+.w-answer .w-row-detail > div { min-height: 0; overflow: hidden; }
+.w-answer .w-row-lines { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 4px 8px; padding: 2px 0 2px 14px; border-left: 1px solid var(--a-line); }
+.w-answer .w-row-lines span { color: var(--a-ink-2); font-size: 11.5px; line-height: 1.6; overflow-wrap: anywhere; }
+.w-answer .w-row-lines .error { color: var(--error); }
+.w-answer .w-steps-shimmer { background: linear-gradient(90deg, var(--a-ink-3) 35%, var(--a-ink) 50%, var(--a-ink-3) 65%) 0 0 / 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: w-shimmer 1.4s linear infinite; }
+@keyframes w-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.w-answer .w-step-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: var(--error); }
+.w-answer .w-step-undo { flex-shrink: 0; padding: 1px 7px; border: 1px solid var(--a-line); border-radius: 6px; background: transparent; color: var(--a-ink-2); font: inherit; font-size: 11.5px; cursor: pointer; }
+.w-answer .w-step-undo:hover { background: var(--a-hover); color: var(--a-ink); }
+.w-answer .w-step-undo:disabled { opacity: 0.6; cursor: default; }
+.w-answer .w-step-spin { width: 11px; height: 11px; flex-shrink: 0; box-sizing: border-box; border: 1.5px solid var(--a-line); border-top-color: var(--a-ink-2); border-radius: 50%; animation: w-spin 700ms linear infinite; }
+@keyframes w-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .w-answer .w-steps-shimmer { background: none; color: var(--a-ink-2); }
+  .w-answer .w-step-spin { border-color: var(--a-ink-3); border-style: dotted; }
+  .w-answer .w-row { animation: none; }
+}
+
+/* ---------- AI-21 page actions (D-40): the card under an answer that proposed one ---------- */
+.w-act { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; animation: w-fade 300ms ease-out both; }
+.w-act p { margin: 0; }
+.w-act-title, .w-act-head { font-weight: 600; }
+.w-act-head { color: var(--muted); font-size: 12px; font-weight: 500; margin-bottom: 4px !important; }
+.w-act-summary { color: var(--text-soft); }
+.w-act-form { display: grid; gap: 8px; margin-top: 6px; }
+.w-act-field { display: grid; gap: 4px; }
+.w-act-label { color: var(--muted); font-size: 12px; text-transform: capitalize; }
+.w-act-field input, .w-act-field select { width: 100%; min-height: 34px; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-xs); background: var(--surface); color: var(--text); font: inherit; }
+.w-act-field input:focus-visible, .w-act-field select:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.w-act-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.w-act-chip { padding: 5px 11px; border: 1px solid var(--border); border-radius: var(--radius-xs); background: var(--surface); color: var(--text); font: inherit; font-size: 12.5px; line-height: 1.5; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.w-act-chip:hover { background: var(--hover); }
+.w-act-chip.on { border-color: var(--accent); background: var(--accent); color: var(--accent-text); }
+.w-act-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.w-act-btn { min-height: 32px; padding: 0 14px; border: 0; border-radius: var(--radius-sm); background: var(--accent); color: var(--accent-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.w-act-btn:hover { background: var(--accent-hover); }
+.w-act-btn:disabled { opacity: 0.5; cursor: default; }
+.w-act-ghost { min-height: 32px; padding: 0 10px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--muted); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.w-act-ghost:hover { background: var(--hover); color: var(--text); }
+.w-act-ghost:disabled { opacity: 0.6; cursor: default; }
+.w-act-error { color: var(--error); font-size: 12.5px; }
+.i-body .w-act { background: var(--surface); }
+
+/* D-77: the island keeps the question to two lines; the run line spins while it goes; a Confirm's inputs sit small under its words. */
+.i-answer .i-body .msg.own .bubble { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-inline-start: 3px; margin-inline-start: -3px; }
+.w-answer .w-steps-head .w-step-spin { width: 11px; height: 11px; }
+.w-answer .w-steps.working .w-steps-head .w-steps-chev { display: none; }
+.w-act-inputs { margin: 2px 0 0; color: var(--text-soft); font-size: 12px; line-height: 1.5; }
+/* D-78: a run's line opens to its steps. */
+.i-status-btn { width: 100%; border: 0; background: transparent; color: var(--text); text-align: left; cursor: pointer; transition: background 0.15s; }
+.i-status-btn:hover { background: var(--hover); }
+.island-dark .i-status-btn:hover { background: #161618; }
+.i-status-btn:focus-visible { outline-offset: -4px; border-radius: 28px; }
+/* D-79: a one-line pill hugs its line (the box springs to the measured width). */
+.i-hug .i-rest, .i-hug .i-status { width: 100%; }
+.i-hug .i-rest-text { flex: 1 1 auto; }
+/* D-80: the island as the one card waiting on the visitor, over its row. */
+.i-card .i-body { padding: 4px 20px 6px; }
+.i-card .i-top { padding-top: 10px; }
+@media (max-width: 480px) { .i-card .i-body { padding-left: 16px; padding-right: 16px; } }
+/* D-80: collapsed with a card still waiting: a small accent dot and a brighter line. */
+.i-wait-dot { width: 6px; height: 6px; flex: none; margin-right: -4px; border-radius: 50%; background: #ff9f0a; animation: i-pulse 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .i-wait-dot { animation: none; } }
+.i-rest-wait .i-rest-text { color: var(--text); }

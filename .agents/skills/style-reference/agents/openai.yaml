@@ -1,0 +1,4 @@
+interface:
+  display_name: "Style Reference"
+  short_description: "Apply reference styles with semantic tokens"
+  default_prompt: "Use $style-reference to restyle this app from a connected reference while preserving its design system."
